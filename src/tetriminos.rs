@@ -26,11 +26,13 @@ impl Tetrimino {
     pub fn real(&self) -> [u32; 2] {
         self.real
     }
-    pub fn real_mut(&mut self) -> [u32; 2] {
-        self.real
-    }
     pub fn center(&self) -> [u8; 2] {
         self.center
+    }
+
+    /// Get a mutable reference to the tetrimino's real.
+    pub fn real_mut(&mut self) -> &mut [u32; 2] {
+        &mut self.real
     }
 }
 
@@ -53,14 +55,14 @@ impl TetriminoType {
             // TetriminoType::O => {}
             // TetriminoType::S => {}
             TetriminoType::T => Tetrimino::new(
-                [[0, 1], [1, 0], [1, 1], [2, 1]],
+                [[1, 0], [0, 1], [1, 1], [1, 2]],
                 [1, 1],
                 [22, 5],
                 TetriminoType::T,
             ),
             // TetriminoType::Z => {}
             _ => Tetrimino::new(
-                [[0, 1], [1, 0], [1, 1], [2, 1]],
+                [[1, 0], [0, 1], [1, 1], [1, 2]],
                 [1, 1],
                 [22, 5],
                 TetriminoType::T,

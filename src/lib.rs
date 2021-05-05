@@ -59,11 +59,26 @@ pub struct Config {
     w: u32,
     h: u32,
     title: String,
+    actual_w: f64,
+    canvas_l: f64,
+    canvas_r: f64,
 }
 
 impl Config {
     pub fn new(fps: u32, w: u32, h: u32, title: String) -> Self {
-        Config { fps, w, h, title }
+        let actual_w = w as f64 * (9_f64 / 32_f64);
+        let canvas_l = (w as f64 - actual_w) / 2_f64;
+        let canvas_r = canvas_l + actual_w;
+
+        Config {
+            fps,
+            w,
+            h,
+            title,
+            actual_w,
+            canvas_l,
+            canvas_r,
+        }
     }
 
     /// Get a reference to the config's fps.
@@ -85,11 +100,26 @@ impl Config {
     pub fn w(&self) -> &u32 {
         &self.w
     }
+
+    /// Get a reference to the config's actual w.
+    pub fn actual_w(&self) -> &f64 {
+        &self.actual_w
+    }
+
+    /// Get a reference to the config's canvas l.
+    pub fn canvas_l(&self) -> &f64 {
+        &self.canvas_l
+    }
+
+    /// Get a reference to the config's canvas r.
+    pub fn canvas_r(&self) -> &f64 {
+        &self.canvas_r
+    }
 }
 
 impl Default for Config {
     fn default() -> Self {
-        Self::new(2, 1920, 1080, String::from("Tetris"))
+        Self::new(2, 1600, 900, String::from("Tetris"))
     }
 }
 
@@ -125,20 +155,15 @@ impl Universe {
 
     /// Renders the 10x20 grid that tetriminos spawn on oo
     fn render_grid(&self, d: &mut RaylibDrawHandle, config: &Config) {
-        // We're gonna give ourselves a margin
-        let actual_width = *config.w() as f64 * (9_f64 / 32_f64);
-        let left_margin = (*config.w() as f64 - actual_width) / 2_f64;
-        let right_margin = left_margin + actual_width;
-
         // Spawn tetrminoes at up to level 22
         // Only show 10x20 grid
 
-        let dx = actual_width as u32 / 10;
+        let dx = *config.actual_w() as u32 / 10;
         let dy = config.h() / 20;
 
         for x in (0..=10).into_iter() {
             // For every implement of x, draw from the ground to the ceiling
-            let current_x = x * dx + left_margin as u32;
+            let current_x = x * dx + *config.canvas_l() as u32;
             d.draw_line(
                 current_x as i32,
                 0,
@@ -150,9 +175,9 @@ impl Universe {
         for y in (0..=20).into_iter() {
             let current_y = y * dy;
             d.draw_line(
-                left_margin as i32,
+                *config.canvas_l() as i32,
                 current_y as i32,
-                right_margin as i32,
+                *config.canvas_r() as i32,
                 current_y as i32,
                 Color::from_hex("d4be98").unwrap(),
             );
@@ -161,13 +186,34 @@ impl Universe {
 
     pub fn render(&self, d: &mut RaylibDrawHandle, config: &Config) {
         // Render our current tetrimino
-        let dy = self.current().real()[0] - self.current().center()[0] as u32;
-        let dx = self.current().real()[1] - self.current().center()[1] as u32;
 
+        // Find the real world diff between each of the coords
+        let coords_dy = self.current().real()[0] - self.current().center()[0] as u32;
+        let coords_dx = self.current().real()[1] - self.current().center()[1] as u32;
+
+        dbg!("231", coords_dy);
+
+        // Find the size of each cube
+        let dy = config.h() / 20;
+        let dx = *config.actual_w() as u32 / 10;
+
+        // For every coord in the tetrimino (4 coords in total)
         for coords in self.current().coords().iter() {
-            let actual_width = *config.w() as f64 * (9_f64 / 32_f64);
-            let left_margin = (*config.w() as f64 - actual_width) / 2_f64;
-
+            // First its 'real' coords
+            let real_y = coords[0] as u32 + coords_dy;
+            // If it's offscreen just return
+            if real_y > 20 {
+                continue;
+            }
+            let real_x = coords[1] as u32 + coords_dx;
+            // Figure out what this means in terms of real coords
+            d.draw_rectangle(
+                (*config.canvas_l() as u32 + real_x * dx) as i32,
+                (*config.h() as u32 - (real_y * dy)) as i32,
+                dx as i32,
+                dy as i32,
+                Color::from_hex("d4be98").unwrap(),
+            )
         }
 
         // Render grid
