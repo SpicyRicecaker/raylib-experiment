@@ -131,16 +131,14 @@ pub enum Cell {
 
 // The board for the tetris board
 pub struct Universe {
-    cells: [[Cell; 10]; 40],
     w: u32,
     h: u32,
     current: Tetrimino,
 }
 
 impl Universe {
-    pub fn new(cells: [[Cell; 10]; 40], w: u32, h: u32, current: Tetrimino) -> Self {
+    pub fn new(w: u32, h: u32, current: Tetrimino) -> Self {
         Universe {
-            cells,
             w,
             h,
             current,
@@ -150,7 +148,7 @@ impl Universe {
     pub fn tick(&mut self, rl: &RaylibHandle) {
         // Literally just move current .y down
         // let y = self.current_mut().real_mut()[0];
-        self.current_mut().real_mut()[0] -= 1;
+        *self.current_mut().real_mut().mut_y() -= 1;
     }
 
     /// Renders the 10x20 grid that tetriminos spawn on oo
@@ -188,8 +186,8 @@ impl Universe {
         // Render our current tetrimino
 
         // Find the real world diff between each of the coords
-        let coords_dy = self.current().real()[0] - self.current().center()[0] as u32;
-        let coords_dx = self.current().real()[1] - self.current().center()[1] as u32;
+        let coords_dy = self.current().real().y() - self.current().center().y();
+        let coords_dx = self.current().real().x() - self.current().center().x();
 
         dbg!("231", coords_dy);
 
@@ -200,12 +198,12 @@ impl Universe {
         // For every coord in the tetrimino (4 coords in total)
         for coords in self.current().coords().iter() {
             // First its 'real' coords
-            let real_y = coords[0] as u32 + coords_dy;
+            let real_y = coords.y() + coords_dy;
             // If it's offscreen just return
             if real_y > 20 {
                 continue;
             }
-            let real_x = coords[1] as u32 + coords_dx;
+            let real_x = coords.x() + coords_dx;
             // Figure out what this means in terms of real coords
             d.draw_rectangle(
                 (*config.canvas_l() as u32 + real_x * dx) as i32,
@@ -234,7 +232,6 @@ impl Universe {
 impl Default for Universe {
     fn default() -> Self {
         Universe::new(
-            [[Cell::Unoccupied; 10]; 40],
             10,
             40,
             TetriminoType::generate_tetrimino_from_type(TetriminoType::T),
