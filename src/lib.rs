@@ -1,59 +1,8 @@
+mod tetriminos;
+use raylib::prelude::*;
+use tetriminos::*;
 // use raylib::consts::KeyboardKey;
 // use raylib::{prelude::RaylibDrawHandle, RaylibHandle};
-use raylib::prelude::*;
-mod tetriminos;
-mod Tetriminos;
-use tetriminos::*;
-
-pub trait Loop {
-    fn tick(&mut self, rl: &RaylibHandle);
-    fn render(&self, d: &mut RaylibDrawHandle);
-}
-
-pub struct Player {
-    pub x: u32,
-    pub y: u32,
-    pub radius: u32,
-    pub color: Color,
-    pub velocity: u32,
-}
-
-impl Player {
-    pub fn new(x: u32, y: u32, radius: u32, color: Color, velocity: u32) -> Self {
-        Player {
-            x,
-            y,
-            radius,
-            color,
-            velocity,
-        }
-    }
-}
-
-impl Loop for Player {
-    fn tick(&mut self, rl: &RaylibHandle) {
-        if rl.is_key_down(KeyboardKey::KEY_LEFT) {
-            self.x -= self.velocity;
-        }
-        if rl.is_key_down(KeyboardKey::KEY_RIGHT) {
-            self.x += self.velocity;
-        }
-        if rl.is_key_down(KeyboardKey::KEY_DOWN) {
-            self.y += self.velocity;
-        }
-        if rl.is_key_down(KeyboardKey::KEY_UP) {
-            self.y -= self.velocity;
-        }
-    }
-
-    fn render(&self, d: &mut RaylibDrawHandle) {
-        d.draw_circle(self.x as i32, self.y as i32, self.radius as f32, self.color)
-    }
-}
-
-pub enum Entity {
-    Player(Player),
-}
 
 pub struct Config {
     fps: u32,
@@ -156,15 +105,15 @@ impl Universe {
     pub fn tick(&mut self, rl: &RaylibHandle) {
         // Literally just move current .y down
         // let y = self.current_mut().real_mut()[0];
-        if *self.focused_tetrimino().real().y() - 1 == 0 {
+        if self.focused_tetrimino().within_boundary(Direction::Down) {
+            self.focused_tetrimino_mut().move_down();
+        } else {
             // Solidify the old current
             let temp = self.focused_tetrimino.clone();
             // let temp = self.focused_tetrimino.clone();
             self.stagnant_tetrimino_mut().push(temp);
             // We need to generate a new current and solidify the old current
             *self.focused_tetrimino_mut() = TetriminoType::generate_tetrimino_from_type(TetriminoType::T);
-        } else {
-            *self.focused_tetrimino_mut().real_mut().mut_y() -= 1;
         }
     }
 
@@ -207,38 +156,11 @@ impl Universe {
         // let coords_dx = self.current().real().x() - self.current().center().x();
 
         // Find the size of each cube
-        let dy = config.h() / 20;
-        let dx = *config.actual_w() as u32 / 10;
+        self.focused_tetrimino().render(d, config);
 
-        // For every coord in the tetrimino (4 coords in total)
-        for coords in self.focused_tetrimino().coords().iter() {
-            // First its 'real' coords
-            let real_y = self.focused_tetrimino().real().y() + coords.y() - self.focused_tetrimino().center().y();
-            // If it's offscreen just return
-            if real_y >= 20 {
-                continue;
-            }
-            let real_x = self.focused_tetrimino().real().x() + coords.x() - self.focused_tetrimino().center().x();
-            // Figure out what this means in terms of real coords
-            d.draw_rectangle(
-                (*config.canvas_l() as u32 + real_x * dx) as i32,
-                (*config.h() - (real_y + 1) * dy) as i32,
-                dx as i32,
-                dy as i32,
-                if coords.x() == self.focused_tetrimino().center().x()
-                    && coords.y() == self.focused_tetrimino().center().y()
-                {
-                    Color::from_hex("d4be98").unwrap()
-                } else {
-                    dbg!(real_y);
-                    Color::from_hex("ea6962").unwrap()
-                },
-            )
-        }
-        
         // Draw every coord
         for tetrimino in self.stagnant_tetriminos().iter() {
-            tetrimino.coords()
+            tetrimino.render(d, config);
         }
 
         // Render grid
@@ -254,7 +176,7 @@ impl Universe {
     pub fn focused_tetrimino_mut(&mut self) -> &mut Tetrimino {
         &mut self.focused_tetrimino
     }
-    
+
     /// Get a reference to the universe's stagnant tetriminos.
     pub fn stagnant_tetriminos(&self) -> &Vec<Tetrimino> {
         &self.stagnant_tetriminos
@@ -271,7 +193,7 @@ impl Default for Universe {
             10,
             40,
             TetriminoType::generate_tetrimino_from_type(TetriminoType::T),
-            vec![]
+            vec![],
         )
     }
 }
@@ -279,9 +201,63 @@ impl Default for Universe {
 #[cfg(test)]
 mod test {
     use super::*;
-    use tetriminos::TetriminoType;
+
     #[test]
-    fn test_tetrmino_types() {
-        let tetrimino = TetriminoType::I;
+    fn test_move_down () {
+        let mut tetrimino = Tetrimino::generate_tetrimino_from_center(
+            vec![
+                Coord::new(0, 0),
+                Coord::new(1, 1),
+                Coord::new(1, 0),
+                Coord::new(2, 0),
+            ],
+            Coord::new(1, 0),
+            TetriminoType::T,
+            Coord::new(5, 22),
+        );
+        tetrimino.move_down();
+        
+        let right_real_coords = vec![
+            Coord {x: 4, y: 21},
+            Coord {x: 5, y: 22},
+            Coord {x: 5, y: 21},
+            Coord {x: 6, y: 21},
+        ];
+
+        dbg!(&right_real_coords, tetrimino.real_coords());
+
+        for idx in (0..4).into_iter() {
+            assert_eq!(right_real_coords.get(idx), tetrimino.real_coords().get(idx))
+        }
+    }
+    #[test]
+    fn test_move_down_3 () {
+        let mut tetrimino = Tetrimino::generate_tetrimino_from_center(
+            vec![
+                Coord::new(0, 0),
+                Coord::new(1, 1),
+                Coord::new(1, 0),
+                Coord::new(2, 0),
+            ],
+            Coord::new(1, 0),
+            TetriminoType::T,
+            Coord::new(5, 22),
+        );
+        tetrimino.move_down();
+        tetrimino.move_down();
+        tetrimino.move_down();
+        
+        let right_real_coords = vec![
+            Coord {x: 4, y: 19},
+            Coord {x: 5, y: 20},
+            Coord {x: 5, y: 19},
+            Coord {x: 6, y: 19},
+        ];
+
+        dbg!(&right_real_coords, tetrimino.real_coords());
+
+        for idx in (0..4).into_iter() {
+            assert_eq!(right_real_coords.get(idx), tetrimino.real_coords().get(idx))
+        }
     }
 }
