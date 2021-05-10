@@ -138,11 +138,7 @@ pub struct Universe {
 
 impl Universe {
     pub fn new(w: u32, h: u32, current: Tetrimino) -> Self {
-        Universe {
-            w,
-            h,
-            current,
-        }
+        Universe { w, h, current }
     }
 
     pub fn tick(&mut self, rl: &RaylibHandle) {
@@ -186,10 +182,8 @@ impl Universe {
         // Render our current tetrimino
 
         // Find the real world diff between each of the coords
-        let coords_dy = self.current().real().y() - self.current().center().y();
-        let coords_dx = self.current().real().x() - self.current().center().x();
-
-        dbg!("231", coords_dy);
+        // let coords_dy = self.current().real().y() - self.current().center().y();
+        // let coords_dx = self.current().real().x() - self.current().center().x();
 
         // Find the size of each cube
         let dy = config.h() / 20;
@@ -198,19 +192,26 @@ impl Universe {
         // For every coord in the tetrimino (4 coords in total)
         for coords in self.current().coords().iter() {
             // First its 'real' coords
-            let real_y = coords.y() + coords_dy;
+            let real_y = self.current().real().y() + coords.y() - self.current().center().y();
             // If it's offscreen just return
-            if real_y > 20 {
+            if real_y >= 20 {
                 continue;
             }
-            let real_x = coords.x() + coords_dx;
+            let real_x = self.current().real().x() + coords.x() - self.current().center().x();
             // Figure out what this means in terms of real coords
             d.draw_rectangle(
                 (*config.canvas_l() as u32 + real_x * dx) as i32,
-                (*config.h() as u32 - (real_y * dy)) as i32,
+                (*config.h() - (real_y+1) * dy) as i32,
                 dx as i32,
                 dy as i32,
-                Color::from_hex("d4be98").unwrap(),
+                if coords.x() == self.current().center().x()
+                    && coords.y() == self.current().center().y()
+                {
+                    Color::from_hex("d4be98").unwrap()
+                } else {
+                    dbg!(real_y);
+                    Color::from_hex("ea6962").unwrap()
+                },
             )
         }
 

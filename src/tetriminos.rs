@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub struct Coord {
     x: u32,
     y: u32,
@@ -80,24 +81,24 @@ impl TetriminoType {
             // TetriminoType::S => {}
             TetriminoType::T => Tetrimino::new(
                 vec![
-                    Coord::new(0, 1),
-                    Coord::new(1, 0),
+                    Coord::new(0, 0),
                     Coord::new(1, 1),
-                    Coord::new(2, 1),
+                    Coord::new(1, 0),
+                    Coord::new(2, 0),
                 ],
-                Coord::new(1, 1),
+                Coord::new(1, 0),
                 Coord::new(5, 22),
                 TetriminoType::T,
             ),
             // TetriminoType::Z => {}
             _ => Tetrimino::new(
                 vec![
-                    Coord::new(0, 1),
-                    Coord::new(1, 0),
+                    Coord::new(0, 0),
                     Coord::new(1, 1),
-                    Coord::new(2, 1),
+                    Coord::new(1, 0),
+                    Coord::new(2, 0),
                 ],
-                Coord::new(1, 1),
+                Coord::new(1, 0),
                 Coord::new(5, 22),
                 TetriminoType::T,
             ),
