@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Coord {
     x: u32,
     y: u32,
@@ -23,10 +23,11 @@ impl Coord {
     }
 }
 
+#[derive(Clone)]
 pub struct Tetrimino {
     coords: Vec<Coord>,
     center: Coord,
-    real: Coord,
+    real_coords: Vec<Coord>,
     tetrimino_type: TetriminoType,
 }
 
@@ -34,13 +35,13 @@ impl Tetrimino {
     pub fn new(
         coords: Vec<Coord>,
         center: Coord,
-        real: Coord,
+        real_coords: Vec<Coord>,
         tetrimino_type: TetriminoType,
     ) -> Self {
         Tetrimino {
             coords,
             center,
-            real,
+            real_coords,
             tetrimino_type,
         }
     }
@@ -48,19 +49,20 @@ impl Tetrimino {
     pub fn coords(&self) -> &Vec<Coord> {
         &self.coords
     }
-    pub fn real(&self) -> &Coord {
-        &self.real
+    pub fn real_coords(&self) -> &Vec<Coord> {
+        &self.real_coords
     }
     pub fn center(&self) -> &Coord {
         &self.center
     }
 
     /// Get a mutable reference to the tetrimino's real.
-    pub fn real_mut(&mut self) -> &mut Coord {
-        &mut self.real
+    pub fn real_coords_mut(&mut self) -> &mut Vec<Coord> {
+        &mut self.real_coords
     }
 }
 
+#[derive(Clone, Copy)]
 pub enum TetriminoType {
     I,
     J,

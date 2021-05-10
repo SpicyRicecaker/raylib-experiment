@@ -2,6 +2,7 @@
 // use raylib::{prelude::RaylibDrawHandle, RaylibHandle};
 use raylib::prelude::*;
 mod tetriminos;
+mod Tetriminos;
 use tetriminos::*;
 
 pub trait Loop {
@@ -133,18 +134,38 @@ pub enum Cell {
 pub struct Universe {
     w: u32,
     h: u32,
-    current: Tetrimino,
+    focused_tetrimino: Tetrimino,
+    stagnant_tetriminos: Vec<Tetrimino>,
 }
 
 impl Universe {
-    pub fn new(w: u32, h: u32, current: Tetrimino) -> Self {
-        Universe { w, h, current }
+    pub fn new(
+        w: u32,
+        h: u32,
+        focused_tetrimino: Tetrimino,
+        stagnant_tetriminos: Vec<Tetrimino>,
+    ) -> Self {
+        Universe {
+            w,
+            h,
+            focused_tetrimino,
+            stagnant_tetriminos,
+        }
     }
 
     pub fn tick(&mut self, rl: &RaylibHandle) {
         // Literally just move current .y down
         // let y = self.current_mut().real_mut()[0];
-        *self.current_mut().real_mut().mut_y() -= 1;
+        if *self.focused_tetrimino().real().y() - 1 == 0 {
+            // Solidify the old current
+            let temp = self.focused_tetrimino.clone();
+            // let temp = self.focused_tetrimino.clone();
+            self.stagnant_tetrimino_mut().push(temp);
+            // We need to generate a new current and solidify the old current
+            *self.focused_tetrimino_mut() = TetriminoType::generate_tetrimino_from_type(TetriminoType::T);
+        } else {
+            *self.focused_tetrimino_mut().real_mut().mut_y() -= 1;
+        }
     }
 
     /// Renders the 10x20 grid that tetriminos spawn on oo
@@ -190,22 +211,22 @@ impl Universe {
         let dx = *config.actual_w() as u32 / 10;
 
         // For every coord in the tetrimino (4 coords in total)
-        for coords in self.current().coords().iter() {
+        for coords in self.focused_tetrimino().coords().iter() {
             // First its 'real' coords
-            let real_y = self.current().real().y() + coords.y() - self.current().center().y();
+            let real_y = self.focused_tetrimino().real().y() + coords.y() - self.focused_tetrimino().center().y();
             // If it's offscreen just return
             if real_y >= 20 {
                 continue;
             }
-            let real_x = self.current().real().x() + coords.x() - self.current().center().x();
+            let real_x = self.focused_tetrimino().real().x() + coords.x() - self.focused_tetrimino().center().x();
             // Figure out what this means in terms of real coords
             d.draw_rectangle(
                 (*config.canvas_l() as u32 + real_x * dx) as i32,
-                (*config.h() - (real_y+1) * dy) as i32,
+                (*config.h() - (real_y + 1) * dy) as i32,
                 dx as i32,
                 dy as i32,
-                if coords.x() == self.current().center().x()
-                    && coords.y() == self.current().center().y()
+                if coords.x() == self.focused_tetrimino().center().x()
+                    && coords.y() == self.focused_tetrimino().center().y()
                 {
                     Color::from_hex("d4be98").unwrap()
                 } else {
@@ -214,19 +235,33 @@ impl Universe {
                 },
             )
         }
+        
+        // Draw every coord
+        for tetrimino in self.stagnant_tetriminos().iter() {
+            tetrimino.coords()
+        }
 
         // Render grid
         self.render_grid(d, config);
     }
 
     /// Get a reference to the universe's current.
-    pub fn current(&self) -> &Tetrimino {
-        &self.current
+    pub fn focused_tetrimino(&self) -> &Tetrimino {
+        &self.focused_tetrimino
     }
 
     /// Get a mutable reference to the universe's current.
-    pub fn current_mut(&mut self) -> &mut Tetrimino {
-        &mut self.current
+    pub fn focused_tetrimino_mut(&mut self) -> &mut Tetrimino {
+        &mut self.focused_tetrimino
+    }
+    
+    /// Get a reference to the universe's stagnant tetriminos.
+    pub fn stagnant_tetriminos(&self) -> &Vec<Tetrimino> {
+        &self.stagnant_tetriminos
+    }
+
+    pub fn stagnant_tetrimino_mut(&mut self) -> &mut Vec<Tetrimino> {
+        &mut self.stagnant_tetriminos
     }
 }
 
@@ -236,6 +271,7 @@ impl Default for Universe {
             10,
             40,
             TetriminoType::generate_tetrimino_from_type(TetriminoType::T),
+            vec![]
         )
     }
 }
