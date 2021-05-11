@@ -1,8 +1,9 @@
 use raylib::prelude::*;
+use std::collections::HashSet;
 
 use crate::Config;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Coord {
     pub x: u32,
     pub y: u32,
@@ -159,6 +160,43 @@ impl Tetrimino {
             }
         }
     }
+
+    pub fn will_collide(f: &Tetrimino, s: &Tetrimino, direction: Direction) -> bool {
+        let mut coords: HashSet<Coord> = HashSet::new();
+        match direction {
+            Direction::Up => false,
+            Direction::Down => {
+                for f_coord in f.real_coords().iter() {
+                    coords.insert(Coord {
+                        x: *f_coord.x(),
+                        y: f_coord.y() - 1,
+                    });
+                }
+                for s_coord in s.real_coords().iter() {
+                    if coords.contains(s_coord) {
+                        return true;
+                    }
+                }
+                false
+            }
+            Direction::Left => {
+                for coord in f.real_coords().iter() {
+                    if coord.x == 0 {
+                        return false;
+                    }
+                }
+                true
+            }
+            Direction::Right => {
+                for coord in f.real_coords().iter() {
+                    if coord.x + 1 > 20 {
+                        return false;
+                    }
+                }
+                true
+            }
+        }
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -237,7 +275,7 @@ mod test {
         }
     }
     #[test]
-    fn test_boundary_positive () {
+    fn test_boundary_positive() {
         let tetrimino = Tetrimino::generate_tetrimino_from_center(
             vec![
                 Coord::new(0, 0),
@@ -253,7 +291,7 @@ mod test {
     }
 
     #[test]
-    fn test_boundary_negative () {
+    fn test_boundary_negative() {
         let tetrimino = Tetrimino::generate_tetrimino_from_center(
             vec![
                 Coord::new(0, 0),
@@ -274,4 +312,3 @@ mod test {
         assert_eq!(tetrimino.within_boundary(Direction::Down), false);
     }
 }
-

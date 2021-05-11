@@ -1,5 +1,5 @@
 [package]
-name = "raylib-moving-cube"
+name = "tetris-raylib-rs"
 version = "0.1.0"
 authors = ["SpicyRicecaker <awesomenessisgolden@gmail.com>"]
 edition = "2018"

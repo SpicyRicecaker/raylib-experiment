@@ -45,13 +45,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "raylib-moving-cube"
-version = "0.1.0"
-dependencies = [
- "raylib",
-]
-
-[[package]]
 name = "raylib-sys"
 version = "3.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -60,4 +53,11 @@ dependencies = [
  "cc",
  "cmake",
  "fs_extra",
+]
+
+[[package]]
+name = "tetris-raylib-rs"
+version = "0.1.0"
+dependencies = [
+ "raylib",
 ]

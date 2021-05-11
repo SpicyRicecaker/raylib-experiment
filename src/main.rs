@@ -1,5 +1,5 @@
 use raylib::prelude::*;
-use raylib_moving_cube::{Config, Universe};
+use tetris_raylib_rs::{Config, Universe};
 // use raylib_moving_cube::Player;
 // use raylib_moving_cube::{Entity, Loop};
 

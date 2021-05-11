@@ -69,7 +69,7 @@ impl Config {
 
 impl Default for Config {
     fn default() -> Self {
-        Self::new(2, 1600, 900, String::from("Tetris"))
+        Self::new(8, 1600, 900, String::from("Tetris"))
     }
 }
 
@@ -105,7 +105,23 @@ impl Universe {
     pub fn tick(&mut self, rl: &RaylibHandle) {
         // Literally just move current .y down
         // let y = self.current_mut().real_mut()[0];
-        if self.focused_tetrimino().within_boundary(Direction::Down) {
+
+        let within_boundary = self.focused_tetrimino().within_boundary(Direction::Down);
+        let mut collision = false;
+
+        if within_boundary {
+            for stagnant_tetrimino in self.stagnant_tetriminos() {
+                if Tetrimino::will_collide(
+                    self.focused_tetrimino(),
+                    stagnant_tetrimino,
+                    Direction::Down,
+                ) {
+                    collision = true;
+                }
+            }
+        }
+
+        if !collision && within_boundary {
             self.focused_tetrimino_mut().move_down();
         } else {
             // Solidify the old current
@@ -113,7 +129,8 @@ impl Universe {
             // let temp = self.focused_tetrimino.clone();
             self.stagnant_tetrimino_mut().push(temp);
             // We need to generate a new current and solidify the old current
-            *self.focused_tetrimino_mut() = TetriminoType::generate_tetrimino_from_type(TetriminoType::T);
+            *self.focused_tetrimino_mut() =
+                TetriminoType::generate_tetrimino_from_type(TetriminoType::T);
         }
     }
 
@@ -203,7 +220,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_move_down () {
+    fn test_move_down() {
         let mut tetrimino = Tetrimino::generate_tetrimino_from_center(
             vec![
                 Coord::new(0, 0),
@@ -216,12 +233,12 @@ mod test {
             Coord::new(5, 22),
         );
         tetrimino.move_down();
-        
+
         let right_real_coords = vec![
-            Coord {x: 4, y: 21},
-            Coord {x: 5, y: 22},
-            Coord {x: 5, y: 21},
-            Coord {x: 6, y: 21},
+            Coord { x: 4, y: 21 },
+            Coord { x: 5, y: 22 },
+            Coord { x: 5, y: 21 },
+            Coord { x: 6, y: 21 },
         ];
 
         dbg!(&right_real_coords, tetrimino.real_coords());
@@ -231,7 +248,7 @@ mod test {
         }
     }
     #[test]
-    fn test_move_down_3 () {
+    fn test_move_down_3() {
         let mut tetrimino = Tetrimino::generate_tetrimino_from_center(
             vec![
                 Coord::new(0, 0),
@@ -246,12 +263,12 @@ mod test {
         tetrimino.move_down();
         tetrimino.move_down();
         tetrimino.move_down();
-        
+
         let right_real_coords = vec![
-            Coord {x: 4, y: 19},
-            Coord {x: 5, y: 20},
-            Coord {x: 5, y: 19},
-            Coord {x: 6, y: 19},
+            Coord { x: 4, y: 19 },
+            Coord { x: 5, y: 20 },
+            Coord { x: 5, y: 19 },
+            Coord { x: 6, y: 19 },
         ];
 
         dbg!(&right_real_coords, tetrimino.real_coords());
