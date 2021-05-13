@@ -69,7 +69,7 @@ impl Config {
 
 impl Default for Config {
     fn default() -> Self {
-        Self::new(8, 1600, 900, String::from("Tetris"))
+        Self::new(60, 1600, 900, String::from("Tetris"))
     }
 }
 
@@ -85,6 +85,8 @@ pub struct Universe {
     h: u32,
     focused_tetrimino: Tetrimino,
     stagnant_tetriminos: Vec<Tetrimino>,
+    ticks: u32,
+    FALLRATE: u32
 }
 
 impl Universe {
@@ -93,19 +95,21 @@ impl Universe {
         h: u32,
         focused_tetrimino: Tetrimino,
         stagnant_tetriminos: Vec<Tetrimino>,
+        ticks: u32,
     ) -> Self {
+        const FALLRATE: u32 = 6;
         Universe {
             w,
             h,
             focused_tetrimino,
             stagnant_tetriminos,
+            ticks,
+            FALLRATE
         }
     }
 
-    pub fn tick(&mut self, rl: &RaylibHandle) {
-        // Literally just move current .y down
-        // let y = self.current_mut().real_mut()[0];
-
+    fn fall_focused(&mut self) {
+        // Code that determines moving the pieces down
         let within_boundary = self.focused_tetrimino().within_boundary(Direction::Down);
         let mut collision = false;
 
@@ -131,6 +135,19 @@ impl Universe {
             // We need to generate a new current and solidify the old current
             *self.focused_tetrimino_mut() =
                 TetriminoType::generate_tetrimino_from_type(TetriminoType::T);
+        }
+    }
+
+    pub fn tick(&mut self, rl: &RaylibHandle) {
+        self.ticks += 1;
+        // Literally just move current .y down
+        // let y = self.current_mut().real_mut()[0];
+
+        self.focused_tetrimino_mut().tick(rl);
+        // Falls at the rate of 6 per second
+        if self.ticks() > self.FALLRATE() {
+            *self.ticks_mut() = 0;
+            self.fall_focused();
         }
     }
 
@@ -202,6 +219,21 @@ impl Universe {
     pub fn stagnant_tetrimino_mut(&mut self) -> &mut Vec<Tetrimino> {
         &mut self.stagnant_tetriminos
     }
+
+    /// Get a reference to the universe's ticks.
+    pub fn ticks(&self) -> &u32 {
+        &self.ticks
+    }
+
+    /// Get a mutable reference to the universe's ticks.
+    pub fn ticks_mut(&mut self) -> &mut u32 {
+        &mut self.ticks
+    }
+
+    /// Get a reference to the universe's f a l l r a t e.
+    pub fn FALLRATE(&self) -> &u32 {
+        &self.FALLRATE
+    }
 }
 
 impl Default for Universe {
@@ -211,6 +243,7 @@ impl Default for Universe {
             40,
             TetriminoType::generate_tetrimino_from_type(TetriminoType::T),
             vec![],
+            0,
         )
     }
 }
