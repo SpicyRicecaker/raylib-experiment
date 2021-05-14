@@ -1,5 +1,5 @@
-use raylib::prelude::*;
 use raylib::consts::KeyboardKey;
+use raylib::prelude::*;
 use std::collections::HashSet;
 
 use crate::Config;
@@ -198,25 +198,17 @@ impl Tetrimino {
             }
         }
     }
-    
-    pub fn tick(&mut self, rl: &RaylibHandle) {
-        // if rl.is_key_pressed(KeyboardKey::KEY_DOWN) {
-        //     self.real_coords_mut()
-        // }
-        // if rl.is_key_pressed(KeyboardKey::KEY_UP) {
-            
-        // }
-        if rl.is_key_down(KeyboardKey::KEY_LEFT) {
-            for coord in self.real_coords_mut() {
-                *coord.mut_x() -= 1;
-            }
+
+    pub fn move_left(&mut self) {
+        for coord in self.real_coords_mut() {
+            *coord.mut_x() -= 1;
         }
-        if rl.is_key_down(KeyboardKey::KEY_RIGHT){
-            for coord in self.real_coords_mut() {
-                *coord.mut_x() += 1;
-            }
+    }
+    pub fn move_right(&mut self) {
+        for coord in self.real_coords_mut() {
+            *coord.mut_x() += 1;
         }
-    } 
+    }
 }
 
 #[derive(Clone, Copy)]

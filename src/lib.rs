@@ -1,6 +1,10 @@
 mod tetriminos;
+mod tetris_input;
+
 use raylib::prelude::*;
 use tetriminos::*;
+
+use tetris_input::Tetris::TetriminoControls;
 // use raylib::consts::KeyboardKey;
 // use raylib::{prelude::RaylibDrawHandle, RaylibHandle};
 
@@ -79,6 +83,7 @@ pub enum Cell {
     Unoccupied = 0,
 }
 
+
 // The board for the tetris board
 pub struct Universe {
     w: u32,
@@ -86,7 +91,7 @@ pub struct Universe {
     focused_tetrimino: Tetrimino,
     stagnant_tetriminos: Vec<Tetrimino>,
     ticks: u32,
-    FALLRATE: u32
+    tetrimino_controls: TetriminoControls,
 }
 
 impl Universe {
@@ -97,14 +102,14 @@ impl Universe {
         stagnant_tetriminos: Vec<Tetrimino>,
         ticks: u32,
     ) -> Self {
-        const FALLRATE: u32 = 6;
+        let tetrimino_controls = TetriminoControls::new();
         Universe {
             w,
             h,
             focused_tetrimino,
             stagnant_tetriminos,
             ticks,
-            FALLRATE
+            tetrimino_controls,
         }
     }
 
@@ -139,15 +144,20 @@ impl Universe {
     }
 
     pub fn tick(&mut self, rl: &RaylibHandle) {
-        self.ticks += 1;
-        // Literally just move current .y down
-        // let y = self.current_mut().real_mut()[0];
+        *self.ticks_mut() += 1;
+        let tick_value = *self.ticks();
 
-        self.focused_tetrimino_mut().tick(rl);
+        // Literally just move current .y down
+        self.tetrimino_controls
+            .tick(rl, &mut self.focused_tetrimino);
         // Falls at the rate of 6 per second
-        if self.ticks() > self.FALLRATE() {
-            *self.ticks_mut() = 0;
+
+        if self.ticks() % 12 == 0 {
             self.fall_focused();
+        }
+
+        if *self.ticks() >= 60 {
+            *self.ticks_mut() = 0;
         }
     }
 
@@ -228,11 +238,6 @@ impl Universe {
     /// Get a mutable reference to the universe's ticks.
     pub fn ticks_mut(&mut self) -> &mut u32 {
         &mut self.ticks
-    }
-
-    /// Get a reference to the universe's f a l l r a t e.
-    pub fn FALLRATE(&self) -> &u32 {
-        &self.FALLRATE
     }
 }
 
