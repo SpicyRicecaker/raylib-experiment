@@ -1,4 +1,8 @@
+// Should be some sort of component architecture
+// Wonder if we should make a tetrimino util, call that from here
 pub mod Utils {
+    use crate::Tetrimino;
+    use raylib::prelude::*;
 
     #[derive(Clone, Copy)]
     pub enum KeyboardState {
@@ -42,7 +46,7 @@ pub mod Utils {
             self.buffer = Buffer::Closed
         }
 
-        pub fn reset_buffer(&mut self) {
+        pub fn open_buffer(&mut self) {
             self.buffer = Buffer::Opened(0)
         }
 
@@ -53,7 +57,7 @@ pub mod Utils {
 
         pub fn increment_buffer(&mut self) {
             if let Buffer::Opened(i) = &mut self.buffer {
-               *i += 1
+                *i += 1
             }
         }
 
@@ -66,12 +70,12 @@ pub mod Utils {
         pub fn set_state(&mut self, state: KeyboardState) {
             self.state = state;
         }
-    
-    /// Get a mutable reference to the controlled key's buffer.
-    pub fn buffer_mut(&mut self) -> &mut Buffer {
-        &mut self.buffer
+
+        /// Get a mutable reference to the controlled key's buffer.
+        pub fn buffer_mut(&mut self) -> &mut Buffer {
+            &mut self.buffer
+        }
     }
-}
 
     // impl ControlledKey {
     //     fn from (key: raylib::consts::KeyboardKey, repeat: ) -> Self {
@@ -92,6 +96,54 @@ pub mod Utils {
                 state: KeyboardState::Initiation,
                 buffer: Buffer::Closed,
                 repeat: Repeat { delay: 8, rate: 4 },
+            }
+        }
+    }
+
+    impl ControlledKey {
+        pub fn tick(&mut self, rl: &RaylibHandle, tetrimino: &mut Tetrimino) {
+            if rl.is_key_pressed(self.key) {
+                // Reset buffer and move it right
+                self.open_buffer();
+                tetrimino.move_right();
+            }
+
+            // Read our current controlled key buffer
+            if let Buffer::Opened(buffer) = self.buffer {
+                match self.state {
+                    // If we're in the first stage after presseed
+                    KeyboardState::Initiation => {
+                        // If the key is being held
+                        if rl.is_key_down(self.key) {
+                            // Increment the buffer
+                            self.increment_buffer();
+                            if buffer > self.repeat.delay {
+                                self.state = KeyboardState::Held;
+                            }
+                        } else {
+                            // Otherwise close the buffer
+                            self.close_buffer();
+                        }
+                    }
+                    // If the key has been held for a suffcient amount of time
+                    KeyboardState::Held => {
+                        // If the key is held
+                        if rl.is_key_down(self.key) {
+                            // Calculate the amount of time that we've held the key
+                            self.increment_buffer();
+                            // If the # of key presses surpases repeat rate
+                            if buffer > self.repeat.rate {
+                                // Move the tetrimino, reset buffer count
+                                tetrimino.move_right();
+                                self.open_buffer()
+                            }
+                        } else {
+                            // Otherwise close the buffer
+                            self.set_state(KeyboardState::Initiation);
+                            self.close_buffer();
+                        }
+                    }
+                }
             }
         }
     }
@@ -137,45 +189,9 @@ pub mod Tetris {
         }
 
         pub fn tick(&mut self, rl: &RaylibHandle, tetrimino: &mut Tetrimino) {
-            // for ckey in &mut self.controlled_keys.iter() {
-            let ckey = self.controlled_keys.get_mut(0).unwrap();
-
-            if rl.is_key_pressed(*ckey.key()) {
-                ckey.close_buffer();
-                tetrimino.move_right();
+            for ckey in self.controlled_keys.iter_mut() {
+                ckey.tick(rl,Tetrimino::move_right);
             }
-
-            // let state = *ckey.state();
-            if let Buffer::Opened(buffer) = ckey.buffer() {
-                match ckey.state() {
-                    KeyboardState::Initiation => {
-                        if rl.is_key_down(*ckey.key()) {
-                            ckey.increment_buffer();
-                            dbg!(&buffer);
-                            // if *buffer > ckey.repeat.delay {
-                            //     ckey.set_state(KeyboardState::Held);
-                            //     ckey.reset_buffer();
-                            // }
-                        } else {
-                            ckey.close_buffer();
-                        }
-                    }
-                    KeyboardState::Held => {
-                        if rl.is_key_down(KeyboardKey::KEY_RIGHT) {
-                            ckey.increment_buffer();
-                            if *buffer > ckey.repeat.rate {
-                                // move
-                                tetrimino.move_right();
-                                ckey.reset_buffer()
-                            }
-                        } else {
-                            ckey.set_state(KeyboardState::Initiation);
-                            ckey.close_buffer();
-                        }
-                    }
-                }
-            }
-            // }
         }
     }
 }
