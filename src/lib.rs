@@ -119,15 +119,7 @@ impl Universe {
         let mut collision = false;
 
         if within_boundary {
-            for stagnant_tetrimino in self.stagnant_tetriminos() {
-                if Tetrimino::will_collide(
-                    self.focused_tetrimino(),
-                    stagnant_tetrimino,
-                    Direction::Down,
-                ) {
-                    collision = true;
-                }
-            }
+            collision = Tetrimino::will_collide_all(self.focused_tetrimino(), self.stagnant_tetriminos(), Direction::Down);
         }
 
         if !collision && within_boundary {
@@ -148,7 +140,7 @@ impl Universe {
 
         // Literally just move current .y down
         self.tetrimino_controls
-            .tick(rl, &mut self.focused_tetrimino);
+            .tick(rl, &mut self.focused_tetrimino, &self.stagnant_tetriminos);
         // Falls at the rate of 6 per second
 
         if self.ticks() % 12 == 0 {

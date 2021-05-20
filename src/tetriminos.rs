@@ -11,7 +11,6 @@ pub struct Coord {
 
 impl Coord {
     pub fn new(x: u32, y: u32) -> Self {
-        // Initialized as x, y
         Coord { x, y }
     }
     pub fn x(&self) -> &u32 {
@@ -152,7 +151,7 @@ impl Tetrimino {
             }
             Direction::Right => {
                 for coord in self.real_coords().iter() {
-                    if coord.x + 1 > 20 {
+                    if coord.x + 1 >= 10 {
                         return false;
                     }
                 }
@@ -161,41 +160,40 @@ impl Tetrimino {
         }
     }
 
-    pub fn will_collide(f: &Tetrimino, s: &Tetrimino, direction: Direction) -> bool {
-        let mut coords: HashSet<Coord> = HashSet::new();
-        match direction {
-            Direction::Up => false,
-            Direction::Down => {
-                for f_coord in f.real_coords().iter() {
-                    coords.insert(Coord {
-                        x: *f_coord.x(),
-                        y: f_coord.y() - 1,
-                    });
-                }
-                for s_coord in s.real_coords().iter() {
-                    if coords.contains(s_coord) {
-                        return true;
-                    }
-                }
-                false
-            }
-            Direction::Left => {
-                for coord in f.real_coords().iter() {
-                    if coord.x == 0 {
-                        return false;
-                    }
-                }
-                true
-            }
-            Direction::Right => {
-                for coord in f.real_coords().iter() {
-                    if coord.x + 1 > 20 {
-                        return false;
-                    }
-                }
-                true
+    pub fn will_collide_all(
+        t: &Tetrimino,
+        stagnant_tetriminos: &Vec<Tetrimino>,
+        direction: Direction,
+    ) -> bool {
+        let (dx, dy) = match direction {
+            Direction::Down => (0, -1),
+            Direction::Up => (0, -1),
+            Direction::Left => (-1, 0),
+            Direction::Right => (1, 0),
+        };
+
+        for stagnant_tetrimino in stagnant_tetriminos {
+            if Tetrimino::will_collide(t, stagnant_tetrimino, dx, dy) {
+                return true;
             }
         }
+        false
+    }
+
+    pub fn will_collide(f: &Tetrimino, s: &Tetrimino, dx: i32, dy: i32) -> bool {
+        let mut coords: HashSet<Coord> = HashSet::new();
+        for f_coord in f.real_coords().iter() {
+            coords.insert(Coord {
+                x: (*f_coord.x() as i32 + dx) as u32,
+                y: (*f_coord.y() as i32 + dy) as u32,
+            });
+        }
+        for s_coord in s.real_coords().iter() {
+            if coords.contains(s_coord) {
+                return true;
+            }
+        }
+        false
     }
 
     pub fn move_left(&mut self) {

@@ -125,7 +125,7 @@ pub mod tetris {
     // The framework that keyboard input and keys are built on
     use raylib::prelude::*;
     // Our implementation of tetriminos
-    use crate::Tetrimino;
+    use crate::{Direction, Tetrimino};
     pub struct TetriminoControls {
         // Not sure if fallrate really fits the agenda here
         FALLRATE: u32,
@@ -154,12 +154,33 @@ pub mod tetris {
             }
         }
 
-        pub fn tick(&mut self, rl: &RaylibHandle, tetrimino: &mut Tetrimino) {
+        pub fn tick(
+            &mut self,
+            rl: &RaylibHandle,
+            tetrimino: &mut Tetrimino,
+            stagnant_tetriminos: &Vec<Tetrimino>,
+        ) {
             for ckey in self.controlled_keys.iter_mut() {
                 if ckey.tick(rl) {
                     match ckey.key {
-                        KeyboardKey::KEY_LEFT => tetrimino.move_left(),
-                        KeyboardKey::KEY_RIGHT => tetrimino.move_right(),
+                        KeyboardKey::KEY_LEFT => {
+                            if tetrimino.within_boundary(Direction::Left) && !Tetrimino::will_collide_all(
+                                    tetrimino,
+                                    stagnant_tetriminos,
+                                    Direction::Left,
+                                ) {
+                                tetrimino.move_left()
+                            }
+                        }
+                        KeyboardKey::KEY_RIGHT => {
+                            if tetrimino.within_boundary(Direction::Right) && !Tetrimino::will_collide_all(
+                                    tetrimino,
+                                    stagnant_tetriminos,
+                                    Direction::Right,
+                                ) {
+                                tetrimino.move_right()
+                            }
+                        }
                         _ => {}
                     }
                 };
