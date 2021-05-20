@@ -4,7 +4,7 @@ mod tetris_input;
 use raylib::prelude::*;
 use tetriminos::*;
 
-use tetris_input::Tetris::TetriminoControls;
+use tetris_input::tetris::TetriminoControls;
 // use raylib::consts::KeyboardKey;
 // use raylib::{prelude::RaylibDrawHandle, RaylibHandle};
 

@@ -1,7 +1,6 @@
 // Should be some sort of component architecture
 // Wonder if we should make a tetrimino util, call that from here
-pub mod Utils {
-    use crate::Tetrimino;
+pub mod utils {
     use raylib::prelude::*;
 
     #[derive(Clone, Copy)]
@@ -9,11 +8,13 @@ pub mod Utils {
         Initiation,
         Held,
     }
-    impl KeyboardState {
-        fn default() -> KeyboardState {
+
+    impl Default for KeyboardState {
+        fn default() -> Self {
             Self::Initiation
         }
     }
+
     pub enum Buffer {
         Opened(u32),
         Closed,
@@ -32,16 +33,6 @@ pub mod Utils {
     }
 
     impl ControlledKey {
-        /// Get a reference to the controlled key's key.
-        pub fn key(&self) -> &raylib::consts::KeyboardKey {
-            &self.key
-        }
-
-        /// Set the controlled key's buffer.
-        pub fn set_buffer(&mut self, buffer: Buffer) {
-            self.buffer = buffer;
-        }
-
         pub fn close_buffer(&mut self) {
             self.buffer = Buffer::Closed
         }
@@ -50,50 +41,24 @@ pub mod Utils {
             self.buffer = Buffer::Opened(0)
         }
 
-        /// Get a reference to the controlled key's buffer.
-        pub fn buffer(&self) -> &Buffer {
-            &self.buffer
-        }
-
         pub fn increment_buffer(&mut self) {
             if let Buffer::Opened(i) = &mut self.buffer {
                 *i += 1
             }
         }
 
-        /// Get a reference to the controlled key's state.
-        pub fn state(&self) -> &KeyboardState {
-            &self.state
-        }
-
         /// Set the controlled key's state.
         pub fn set_state(&mut self, state: KeyboardState) {
             self.state = state;
         }
-
-        /// Get a mutable reference to the controlled key's buffer.
-        pub fn buffer_mut(&mut self) -> &mut Buffer {
-            &mut self.buffer
-        }
     }
-
-    // impl ControlledKey {
-    //     fn from (key: raylib::consts::KeyboardKey, repeat: ) -> Self {
-    //         ControlledKey {
-    //             key,
-    //             state: KeyboardState::Initiation,
-    //             buffer: Buffer::Closed,
-    //             repeat: Repeat { delay: },
-    //         }
-    //     }
-    // }
 
     impl Default for ControlledKey {
         fn default() -> Self {
             // Defaults are, as per usual, scuffed
             ControlledKey {
                 key: raylib::consts::KeyboardKey::KEY_A,
-                state: KeyboardState::Initiation,
+                state: KeyboardState::default(),
                 buffer: Buffer::Closed,
                 repeat: Repeat { delay: 8, rate: 4 },
             }
@@ -101,11 +66,11 @@ pub mod Utils {
     }
 
     impl ControlledKey {
-        pub fn tick(&mut self, rl: &RaylibHandle, tetrimino: &mut Tetrimino) {
+        pub fn tick(&mut self, rl: &RaylibHandle) -> bool {
             if rl.is_key_pressed(self.key) {
                 // Reset buffer and move it right
                 self.open_buffer();
-                tetrimino.move_right();
+                return true;
             }
 
             // Read our current controlled key buffer
@@ -120,9 +85,11 @@ pub mod Utils {
                             if buffer > self.repeat.delay {
                                 self.state = KeyboardState::Held;
                             }
+                            return false;
                         } else {
                             // Otherwise close the buffer
                             self.close_buffer();
+                            return false;
                         }
                     }
                     // If the key has been held for a suffcient amount of time
@@ -134,24 +101,27 @@ pub mod Utils {
                             // If the # of key presses surpases repeat rate
                             if buffer > self.repeat.rate {
                                 // Move the tetrimino, reset buffer count
-                                tetrimino.move_right();
-                                self.open_buffer()
+                                self.open_buffer();
+                                return true;
                             }
+                            return false;
                         } else {
                             // Otherwise close the buffer
                             self.set_state(KeyboardState::Initiation);
                             self.close_buffer();
+                            return false;
                         }
                     }
                 }
             }
+            false
         }
     }
 }
 
-pub mod Tetris {
+pub mod tetris {
     // Utils for holding a key
-    use super::Utils::*;
+    use super::utils::*;
     // The framework that keyboard input and keys are built on
     use raylib::prelude::*;
     // Our implementation of tetriminos
@@ -162,6 +132,7 @@ pub mod Tetris {
         controlled_keys: Vec<ControlledKey>,
     }
 
+    // This implementation isn't gonna work, if we have for example more functions that we want the keys to do than move the tetrimino
     impl TetriminoControls {
         pub fn new() -> Self {
             const FALLRATE: u32 = 6;
@@ -183,14 +154,15 @@ pub mod Tetris {
             }
         }
 
-        /// Get a reference to the universe's fallrate.
-        pub fn FALLRATE(&self) -> &u32 {
-            &self.FALLRATE
-        }
-
         pub fn tick(&mut self, rl: &RaylibHandle, tetrimino: &mut Tetrimino) {
             for ckey in self.controlled_keys.iter_mut() {
-                ckey.tick(rl,Tetrimino::move_right);
+                if ckey.tick(rl) {
+                    match ckey.key {
+                        KeyboardKey::KEY_LEFT => tetrimino.move_left(),
+                        KeyboardKey::KEY_RIGHT => tetrimino.move_right(),
+                        _ => {}
+                    }
+                };
             }
         }
     }
