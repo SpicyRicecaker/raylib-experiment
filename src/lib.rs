@@ -145,7 +145,6 @@ impl Universe {
 
     pub fn tick(&mut self, rl: &RaylibHandle) {
         *self.ticks_mut() += 1;
-        let tick_value = *self.ticks();
 
         // Literally just move current .y down
         self.tetrimino_controls

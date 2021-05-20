@@ -1,4 +1,3 @@
-use raylib::consts::KeyboardKey;
 use raylib::prelude::*;
 use std::collections::HashSet;
 
@@ -315,12 +314,12 @@ mod test {
             TetriminoType::T,
             Coord::new(5, 0),
         );
-        let right_real_coords = vec![
-            Coord { x: 4, y: 22 },
-            Coord { x: 5, y: 23 },
-            Coord { x: 5, y: 22 },
-            Coord { x: 6, y: 22 },
-        ];
+        // let right_real_coords = vec![
+        //     Coord { x: 4, y: 22 },
+        //     Coord { x: 5, y: 23 },
+        //     Coord { x: 5, y: 22 },
+        //     Coord { x: 6, y: 22 },
+        // ];
         assert_eq!(tetrimino.within_boundary(Direction::Down), false);
     }
 }
