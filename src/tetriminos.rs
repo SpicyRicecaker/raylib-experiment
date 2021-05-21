@@ -222,11 +222,63 @@ pub enum TetriminoType {
 impl TetriminoType {
     pub fn generate_tetrimino_from_type(tetrimino_type: TetriminoType) -> Tetrimino {
         match tetrimino_type {
-            // TetriminoType::I => {}
-            // TetriminoType::J => {}
-            // TetriminoType::L => {}
-            // TetriminoType::O => {}
-            // TetriminoType::S => {}
+            TetriminoType::I => Tetrimino::generate_tetrimino_from_center(
+                vec![
+                    Coord::new(0, 0),
+                    Coord::new(1, 0),
+                    Coord::new(2, 0),
+                    Coord::new(3, 0),
+                ],
+                // TODOOOOOOOOOOOOOOOOOOOOOO
+                Coord::new(0, 0),
+                TetriminoType::T,
+                Coord::new(5, 22),
+            ),
+            TetriminoType::J => Tetrimino::generate_tetrimino_from_center(
+                vec![
+                    Coord::new(0, 0),
+                    Coord::new(1, 0),
+                    Coord::new(2, 0),
+                    Coord::new(0, 1),
+                ],
+                Coord::new(1, 0),
+                TetriminoType::T,
+                Coord::new(5, 22),
+            ),
+            TetriminoType::L => Tetrimino::generate_tetrimino_from_center(
+                vec![
+                    Coord::new(0, 0),
+                    Coord::new(1, 0),
+                    Coord::new(2, 0),
+                    Coord::new(2, 1),
+                ],
+                Coord::new(1, 0),
+                TetriminoType::T,
+                Coord::new(5, 22),
+            ),
+            TetriminoType::O => Tetrimino::generate_tetrimino_from_center(
+                vec![
+                    Coord::new(0, 0),
+                    Coord::new(1, 0),
+                    Coord::new(0, 1),
+                    Coord::new(1, 1),
+                ],
+                // TODOOOOOO
+                Coord::new(0, 0),
+                TetriminoType::T,
+                Coord::new(5, 22),
+            ),
+            TetriminoType::S => Tetrimino::generate_tetrimino_from_center(
+                vec![
+                    Coord::new(0, 0),
+                    Coord::new(1, 0),
+                    Coord::new(1, 1),
+                    Coord::new(2, 1),
+                ],
+                Coord::new(1, 0),
+                TetriminoType::T,
+                Coord::new(5, 22),
+            ),
             TetriminoType::T => Tetrimino::generate_tetrimino_from_center(
                 vec![
                     Coord::new(0, 0),
@@ -238,18 +290,20 @@ impl TetriminoType {
                 TetriminoType::T,
                 Coord::new(5, 22),
             ),
-            // TetriminoType::Z => {}
-            _ => Tetrimino::generate_tetrimino_from_center(
+            TetriminoType::Z => Tetrimino::generate_tetrimino_from_center(
                 vec![
-                    Coord::new(0, 0),
-                    Coord::new(1, 1),
                     Coord::new(1, 0),
                     Coord::new(2, 0),
+                    Coord::new(0, 1),
+                    Coord::new(1, 1),
                 ],
                 Coord::new(1, 0),
                 TetriminoType::T,
                 Coord::new(5, 22),
             ),
+            _ => {
+                panic!()
+            }
         }
     }
 }
