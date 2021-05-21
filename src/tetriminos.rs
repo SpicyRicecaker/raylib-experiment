@@ -220,6 +220,9 @@ pub enum TetriminoType {
 }
 
 impl TetriminoType {
+    pub fn generate_tetrimino_rand() -> Tetrimino {
+        todo!()
+    }
     pub fn generate_tetrimino_from_type(tetrimino_type: TetriminoType) -> Tetrimino {
         match tetrimino_type {
             TetriminoType::I => Tetrimino::generate_tetrimino_from_center(
