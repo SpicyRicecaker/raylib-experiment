@@ -131,7 +131,7 @@ impl Universe {
             self.stagnant_tetrimino_mut().push(temp);
             // We need to generate a new current and solidify the old current
             *self.focused_tetrimino_mut() =
-                TetriminoType::generate_tetrimino_from_type(TetriminoType::T);
+                TetriminoType::generate_tetrimino_rand();
         }
     }
 
@@ -237,7 +237,7 @@ impl Default for Universe {
         Universe::new(
             10,
             40,
-            TetriminoType::generate_tetrimino_from_type(TetriminoType::T),
+            TetriminoType::generate_tetrimino_rand(),
             vec![],
             0,
         )

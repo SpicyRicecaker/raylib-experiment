@@ -1,3 +1,5 @@
+use ::core::panic;
+use rand::{distributions::Standard, prelude::Distribution, Rng};
 use raylib::prelude::*;
 use std::collections::HashSet;
 
@@ -219,9 +221,26 @@ pub enum TetriminoType {
     Z,
 }
 
+impl Distribution<TetriminoType> for Standard {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> TetriminoType {
+        match rng.gen_range(0..7) {
+            0 => TetriminoType::I,
+            1 => TetriminoType::J,
+            2 => TetriminoType::L,
+            3 => TetriminoType::O,
+            4 => TetriminoType::S,
+            5 => TetriminoType::T,
+            6 => TetriminoType::Z,
+            _ => {
+                panic!()
+            }
+        }
+    }
+}
+
 impl TetriminoType {
     pub fn generate_tetrimino_rand() -> Tetrimino {
-        todo!()
+        TetriminoType::generate_tetrimino_from_type(rand::random())
     }
     pub fn generate_tetrimino_from_type(tetrimino_type: TetriminoType) -> Tetrimino {
         match tetrimino_type {

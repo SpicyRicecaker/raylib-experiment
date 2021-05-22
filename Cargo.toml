@@ -10,3 +10,4 @@ homepage = "https://github.com/SpicyRicecaker/raylib-experiment"
 
 [dependencies]
 raylib = "3.5"
+rand = "0.8.3"
