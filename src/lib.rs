@@ -1,6 +1,8 @@
 mod tetriminos;
 mod tetris_input;
 
+use std::collections::HashMap;
+
 use raylib::prelude::*;
 use tetriminos::*;
 
@@ -150,6 +152,16 @@ impl Universe {
         if *self.ticks() >= 60 {
             *self.ticks_mut() = 0;
         }
+
+        let levels: HashMap<u32, &mut Coord> = HashMap::new();
+        for tetrimino in self.stagnant_tetriminos.iter_mut() {
+            let b = tetrimino.coords_mut();
+        }
+        // For any level in which x = 20
+
+        // Delete all coords at level y
+
+        // Queue all coords above y to move down by 1
     }
 
     /// Renders the 10x20 grid that tetriminos spawn on oo
