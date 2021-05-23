@@ -85,7 +85,6 @@ pub enum Cell {
     Unoccupied = 0,
 }
 
-
 // The board for the tetris board
 pub struct Universe {
     w: u32,
@@ -121,7 +120,11 @@ impl Universe {
         let mut collision = false;
 
         if within_boundary {
-            collision = Tetrimino::will_collide_all(self.focused_tetrimino(), self.stagnant_tetriminos(), Direction::Down);
+            collision = Tetrimino::will_collide_all(
+                self.focused_tetrimino(),
+                self.stagnant_tetriminos(),
+                Direction::Down,
+            );
         }
 
         if !collision && within_boundary {
@@ -132,8 +135,7 @@ impl Universe {
             // let temp = self.focused_tetrimino.clone();
             self.stagnant_tetrimino_mut().push(temp);
             // We need to generate a new current and solidify the old current
-            *self.focused_tetrimino_mut() =
-                TetriminoType::generate_tetrimino_rand();
+            *self.focused_tetrimino_mut() = TetriminoType::generate_tetrimino_rand();
         }
     }
 
@@ -153,15 +155,30 @@ impl Universe {
             *self.ticks_mut() = 0;
         }
 
-        let levels: HashMap<u32, &mut Coord> = HashMap::new();
-        for tetrimino in self.stagnant_tetriminos.iter_mut() {
-            let b = tetrimino.coords_mut();
+        let mut levels: HashMap<u32, u32> = HashMap::new();
+
+        // Setup hash
+        for tetrimino in self.stagnant_tetriminos.iter() {
+            for coord in tetrimino.coords() {
+                let e = levels.entry(coord.y).or_insert(0);
+                *e += 1;
+            }
         }
-        // For any level in which x = 20
 
-        // Delete all coords at level y
-
-        // Queue all coords above y to move down by 1
+        // Scan hash
+        for (level, width) in levels {
+            // If the row is full
+            if width == 20 {
+                // Query all tetriminos for level
+                for tetrimino in self.stagnant_tetriminos.iter_mut() {
+                    for coord_i in 0..tetrimino.coords().len() {
+                        if tetrimino.coords().get(coord_i).unwrap().y == level {
+                            tetrimino.coords_mut().remove(coord_i);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /// Renders the 10x20 grid that tetriminos spawn on oo
@@ -246,13 +263,7 @@ impl Universe {
 
 impl Default for Universe {
     fn default() -> Self {
-        Universe::new(
-            10,
-            40,
-            TetriminoType::generate_tetrimino_rand(),
-            vec![],
-            0,
-        )
+        Universe::new(10, 40, TetriminoType::generate_tetrimino_rand(), vec![], 0)
     }
 }
 

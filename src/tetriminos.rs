@@ -62,6 +62,9 @@ impl Tetrimino {
     pub fn coords(&self) -> &Vec<Coord> {
         &self.coords
     }
+    pub fn coords_mut(&mut self) -> &mut Vec<Coord> {
+        &mut self.coords
+    }
     pub fn real_coords(&self) -> &Vec<Coord> {
         &self.real_coords
     }
