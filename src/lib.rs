@@ -159,6 +159,7 @@ impl Universe {
         let mut levels: HashMap<u32, u32> = HashMap::new();
 
         // Setup hash
+        // We should probably store the hashmap, this way we won't have to update it every tick
         for tetrimino in self.stagnant_tetriminos.iter() {
             for coord in tetrimino.real_coords() {
                 let e = levels.entry(coord.y).or_insert(0);
@@ -166,24 +167,53 @@ impl Universe {
             }
         }
 
+        let mut diff = [0; 20];
 
+        let mut something_happened = false;
         // Scan hash
         for (level, width) in levels {
             // If the row is full
             if width == 10 {
+                something_happened = true;
                 // Query all tetriminos for level
-                for tetrimino in self.stagnant_tetriminos.iter_mut() {
-                    let mut i = 0;
-                    while i != tetrimino.real_coords().len() {
-                        if tetrimino.real_coords()[i].y == level {
-                            tetrimino.real_coords_mut().remove(i);
-                            // your code here
+                let mut i = 0;
+                while i != self.stagnant_tetriminos.len() {
+                    let mut j = 0;
+                    while j != self.stagnant_tetriminos[i].real_coords().len() {
+                        if self.stagnant_tetriminos[i].real_coords()[j].y == level {
+                            self.stagnant_tetriminos[i].real_coords_mut().remove(j);
                         } else {
-                            i += 1;
+                            j += 1;
                         }
                     }
+                    // No memory leaks thank you
+                    if self.stagnant_tetriminos[i].real_coords().is_empty() {
+                        self.stagnant_tetriminos.remove(i);
+                    } else {
+                        i += 1;
+                    }
+                }
+                // Everything above this width should then be incremented!
+                Universe::change_arr_from_idx(&mut diff, level, 1);
+            }
+        }
+
+        // Finally,if something happened try to move pieces down if they need to be moved
+        // fk, we're iterating over stagnant tetriminos like 3 times. We honestly only need to really do it twice if we store the hashmap
+        // If we implemented it with an array we would only need to iterate over the board once
+        if something_happened {
+            for i in 0..self.stagnant_tetriminos.len() {
+                for j in 0..self.stagnant_tetriminos[i].real_coords().len() {
+                    self.stagnant_tetriminos[i].real_coords_mut()[j].y -=
+                        diff[self.stagnant_tetriminos[i].real_coords()[j].y as usize];
                 }
             }
+        }
+    }
+
+    pub fn change_arr_from_idx(arr: &mut [u32], idx: u32, diff: u32) {
+        for num in arr.iter_mut().skip(idx as usize) {
+            *num += diff;
         }
     }
 
@@ -337,5 +367,11 @@ mod test {
     }
 
     #[test]
-    fn test_last_row() {}
+    fn test_increment_arr() {
+        let mut arr = [0_u32; 5];
+        let test = [0, 1, 1, 1, 1];
+        Universe::change_arr_from_idx(&mut arr, 1);
+        assert_eq!(arr, test);
+        dbg!(arr);
+    }
 }
