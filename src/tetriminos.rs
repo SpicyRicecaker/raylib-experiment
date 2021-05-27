@@ -37,7 +37,7 @@ pub enum Direction {
 
 #[derive(Clone)]
 pub struct Tetrimino {
-    coords: Vec<Coord>,
+    reference_coords: Vec<Coord>,
     center: Coord,
     real_coords: Vec<Coord>,
     tetrimino_type: TetriminoType,
@@ -51,7 +51,7 @@ impl Tetrimino {
         tetrimino_type: TetriminoType,
     ) -> Self {
         Tetrimino {
-            coords,
+            reference_coords: coords,
             center,
             real_coords,
             tetrimino_type,
@@ -59,10 +59,10 @@ impl Tetrimino {
     }
 
     pub fn coords(&self) -> &Vec<Coord> {
-        &self.coords
+        &self.reference_coords
     }
     pub fn coords_mut(&mut self) -> &mut Vec<Coord> {
-        &mut self.coords
+        &mut self.reference_coords
     }
     pub fn real_coords(&self) -> &Vec<Coord> {
         &self.real_coords
@@ -94,7 +94,7 @@ impl Tetrimino {
             })
             .collect();
         Tetrimino {
-            coords,
+            reference_coords: coords,
             center,
             real_coords,
             tetrimino_type,
@@ -242,7 +242,9 @@ impl Distribution<TetriminoType> for Standard {
 
 impl TetriminoType {
     pub fn generate_tetrimino_rand() -> Tetrimino {
-        TetriminoType::generate_tetrimino_from_type(rand::random())
+        // DEBUG
+        // TetriminoType::generate_tetrimino_from_type(rand::random())
+        TetriminoType::generate_tetrimino_from_type(TetriminoType::O)
     }
     pub fn generate_tetrimino_from_type(tetrimino_type: TetriminoType) -> Tetrimino {
         match tetrimino_type {

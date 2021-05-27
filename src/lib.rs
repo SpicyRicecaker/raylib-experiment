@@ -135,6 +135,7 @@ impl Universe {
             // let temp = self.focused_tetrimino.clone();
             self.stagnant_tetrimino_mut().push(temp);
             // We need to generate a new current and solidify the old current
+
             *self.focused_tetrimino_mut() = TetriminoType::generate_tetrimino_rand();
         }
     }
@@ -159,11 +160,12 @@ impl Universe {
 
         // Setup hash
         for tetrimino in self.stagnant_tetriminos.iter() {
-            for coord in tetrimino.coords() {
+            for coord in tetrimino.real_coords() {
                 let e = levels.entry(coord.y).or_insert(0);
                 *e += 1;
             }
         }
+
 
         // Scan hash
         for (level, width) in levels {
@@ -171,9 +173,13 @@ impl Universe {
             if width == 10 {
                 // Query all tetriminos for level
                 for tetrimino in self.stagnant_tetriminos.iter_mut() {
-                    for coord_i in 0..tetrimino.coords().len() {
-                        if tetrimino.coords().get(coord_i).unwrap().y == level {
-                            tetrimino.coords_mut().remove(coord_i);
+                    let mut i = 0;
+                    while i != tetrimino.real_coords().len() {
+                        if tetrimino.real_coords()[i].y == level {
+                            tetrimino.real_coords_mut().remove(i);
+                            // your code here
+                        } else {
+                            i += 1;
                         }
                     }
                 }
@@ -329,4 +335,7 @@ mod test {
             assert_eq!(right_real_coords.get(idx), tetrimino.real_coords().get(idx))
         }
     }
+
+    #[test]
+    fn test_last_row() {}
 }
