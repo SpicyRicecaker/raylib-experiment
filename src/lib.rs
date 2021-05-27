@@ -168,7 +168,7 @@ impl Universe {
         // Scan hash
         for (level, width) in levels {
             // If the row is full
-            if width == 20 {
+            if width == 10 {
                 // Query all tetriminos for level
                 for tetrimino in self.stagnant_tetriminos.iter_mut() {
                     for coord_i in 0..tetrimino.coords().len() {

@@ -1,4 +1,3 @@
-use ::core::panic;
 use rand::{distributions::Standard, prelude::Distribution, Rng};
 use raylib::prelude::*;
 use std::collections::HashSet;
