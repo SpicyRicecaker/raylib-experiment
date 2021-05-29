@@ -145,7 +145,7 @@ impl Universe {
 
         // Literally just move current .y down
         self.tetrimino_controls
-            .tick(rl, &mut self.focused_tetrimino, &self.stagnant_tetriminos);
+            .tick(rl, &mut self);
         // Falls at the rate of 6 per second
 
         if self.ticks() % 12 == 0 {
@@ -370,7 +370,7 @@ mod test {
     fn test_increment_arr() {
         let mut arr = [0_u32; 5];
         let test = [0, 1, 1, 1, 1];
-        Universe::change_arr_from_idx(&mut arr, 1);
+        Universe::change_arr_from_idx(&mut arr, 1, 1);
         assert_eq!(arr, test);
         dbg!(arr);
     }

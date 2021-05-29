@@ -125,7 +125,7 @@ pub mod tetris {
     // The framework that keyboard input and keys are built on
     use raylib::prelude::*;
     // Our implementation of tetriminos
-    use crate::{Direction, Tetrimino};
+    use crate::{Direction, Tetrimino, Universe};
     pub struct TetriminoControls {
         // Not sure if fallrate really fits the agenda here
         FALLRATE: u32,
@@ -147,6 +147,21 @@ pub mod tetris {
                     repeat: Repeat { delay: 8, rate: 4 },
                     ..Default::default()
                 },
+                ControlledKey {
+                    key: KeyboardKey::KEY_DOWN,
+                    repeat: Repeat { delay: 0, rate: 4 },
+                    ..Default::default()
+                },
+                ControlledKey {
+                    key: KeyboardKey::KEY_Z,
+                    repeat: Repeat { delay: 0, rate: 0 },
+                    ..Default::default()
+                },
+                ControlledKey {
+                    key: KeyboardKey::KEY_C,
+                    repeat: Repeat { delay: 0, rate: 0 },
+                    ..Default::default()
+                },
             ];
             TetriminoControls {
                 FALLRATE,
@@ -157,30 +172,36 @@ pub mod tetris {
         pub fn tick(
             &mut self,
             rl: &RaylibHandle,
-            tetrimino: &mut Tetrimino,
-            stagnant_tetriminos: &Vec<Tetrimino>,
+            // focused_tetrimino: &mut Tetrimino,
+            // stagnant_tetriminos: &Vec<Tetrimino>,
+            universe: &mut Universe,
         ) {
             for ckey in self.controlled_keys.iter_mut() {
                 if ckey.tick(rl) {
                     match ckey.key {
                         KeyboardKey::KEY_LEFT => {
-                            if tetrimino.within_boundary(Direction::Left) && !Tetrimino::will_collide_all(
-                                    tetrimino,
-                                    stagnant_tetriminos,
+                            if universe.focused_tetrimino.within_boundary(Direction::Left)
+                                && !Tetrimino::will_collide_all(
+                                    &universe.focused_tetrimino,
+                                    &universe.stagnant_tetriminos,
                                     Direction::Left,
-                                ) {
-                                tetrimino.move_left()
+                                )
+                            {
+                                universe.focused_tetrimino.move_left()
                             }
                         }
                         KeyboardKey::KEY_RIGHT => {
-                            if tetrimino.within_boundary(Direction::Right) && !Tetrimino::will_collide_all(
-                                    tetrimino,
-                                    stagnant_tetriminos,
+                            if universe.focused_tetrimino.within_boundary(Direction::Right)
+                                && !Tetrimino::will_collide_all(
+                                    &universe.focused_tetrimino,
+                                    &universe.stagnant_tetriminos,
                                     Direction::Right,
-                                ) {
-                                tetrimino.move_right()
+                                )
+                            {
+                                universe.focused_tetrimino.move_right()
                             }
                         }
+                        KeyboardKey::KEY_DOWN => universe.fall_focused(),
                         _ => {}
                     }
                 };

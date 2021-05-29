@@ -1,1 +1,4 @@
 /target
+
+# Krita design docs take up too much space atm
+*.kra*
