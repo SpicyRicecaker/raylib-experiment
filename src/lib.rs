@@ -95,6 +95,37 @@ pub struct Universe {
     tetrimino_controls: TetriminoControls,
 }
 
+impl InputInterface for Universe {
+    fn receive_key() {
+        match ckey.key {
+            KeyboardKey::KEY_LEFT => {
+                if universe.focused_tetrimino.within_boundary(Direction::Left)
+                    && !Tetrimino::will_collide_all(
+                        &universe.focused_tetrimino,
+                        &universe.stagnant_tetriminos,
+                        Direction::Left,
+                    )
+                {
+                    universe.focused_tetrimino.move_left()
+                }
+            }
+            KeyboardKey::KEY_RIGHT => {
+                if universe.focused_tetrimino.within_boundary(Direction::Right)
+                    && !Tetrimino::will_collide_all(
+                        &universe.focused_tetrimino,
+                        &universe.stagnant_tetriminos,
+                        Direction::Right,
+                    )
+                {
+                    universe.focused_tetrimino.move_right()
+                }
+            }
+            KeyboardKey::KEY_DOWN => universe.fall_focused(),
+            _ => {}
+        }
+    }
+}
+
 impl Universe {
     pub fn new(
         w: u32,
@@ -144,8 +175,7 @@ impl Universe {
         *self.ticks_mut() += 1;
 
         // Literally just move current .y down
-        self.tetrimino_controls
-            .tick(rl, &mut self);
+        self.tetrimino_controls.tick(rl, &mut self);
         // Falls at the rate of 6 per second
 
         if self.ticks() % 12 == 0 {

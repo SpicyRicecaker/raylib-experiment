@@ -174,36 +174,10 @@ pub mod tetris {
             rl: &RaylibHandle,
             // focused_tetrimino: &mut Tetrimino,
             // stagnant_tetriminos: &Vec<Tetrimino>,
-            universe: &mut Universe,
+            // universe: &mut Universe,
         ) {
             for ckey in self.controlled_keys.iter_mut() {
                 if ckey.tick(rl) {
-                    match ckey.key {
-                        KeyboardKey::KEY_LEFT => {
-                            if universe.focused_tetrimino.within_boundary(Direction::Left)
-                                && !Tetrimino::will_collide_all(
-                                    &universe.focused_tetrimino,
-                                    &universe.stagnant_tetriminos,
-                                    Direction::Left,
-                                )
-                            {
-                                universe.focused_tetrimino.move_left()
-                            }
-                        }
-                        KeyboardKey::KEY_RIGHT => {
-                            if universe.focused_tetrimino.within_boundary(Direction::Right)
-                                && !Tetrimino::will_collide_all(
-                                    &universe.focused_tetrimino,
-                                    &universe.stagnant_tetriminos,
-                                    Direction::Right,
-                                )
-                            {
-                                universe.focused_tetrimino.move_right()
-                            }
-                        }
-                        KeyboardKey::KEY_DOWN => universe.fall_focused(),
-                        _ => {}
-                    }
                 };
             }
         }
