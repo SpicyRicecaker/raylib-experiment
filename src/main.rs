@@ -1,13 +1,15 @@
 use raylib::prelude::*;
 use tetris_raylib_rs::{Config, Universe};
+use tetris_raylib_rs::Game;
 // use raylib_moving_cube::Player;
 // use raylib_moving_cube::{Entity, Loop};
 
+
 fn main() {
     let config = Config::default();
-    let mut universe = Universe::default();
 
-    init();
+
+    let game = Game::init();
 
     let (mut rl, thread) = raylib::init()
         .size(*config.w() as i32, *config.h() as i32)

@@ -1,10 +1,12 @@
 mod tetriminos;
 mod tetris_input;
+mod game;
 
 use std::collections::HashMap;
 
 use raylib::prelude::*;
 use tetriminos::*;
+use game::*;
 
 use tetris_input::tetris::TetriminoControls;
 // use raylib::consts::KeyboardKey;
@@ -92,7 +94,7 @@ pub struct Universe {
     focused_tetrimino: Tetrimino,
     stagnant_tetriminos: Vec<Tetrimino>,
     ticks: u32,
-    tetrimino_controls: TetriminoControls,
+    // tetrimino_controls: TetriminoControls,
 }
 
 impl Universe {
@@ -103,14 +105,14 @@ impl Universe {
         stagnant_tetriminos: Vec<Tetrimino>,
         ticks: u32,
     ) -> Self {
-        let tetrimino_controls = TetriminoControls::new();
+        // let tetrimino_controls = TetriminoControls::new();
         Universe {
             w,
             h,
             focused_tetrimino,
             stagnant_tetriminos,
             ticks,
-            tetrimino_controls,
+            // tetrimino_controls,
         }
     }
 
@@ -144,8 +146,8 @@ impl Universe {
         *self.ticks_mut() += 1;
 
         // Literally just move current .y down
-        self.tetrimino_controls
-            .tick(rl, &mut self);
+        // self.tetrimino_controls
+        //     .tick(rl, &mut self);
         // Falls at the rate of 6 per second
 
         if self.ticks() % 12 == 0 {
@@ -375,3 +377,4 @@ mod test {
         dbg!(arr);
     }
 }
+
