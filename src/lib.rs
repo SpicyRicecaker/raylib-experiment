@@ -95,34 +95,41 @@ pub struct Universe {
     tetrimino_controls: TetriminoControls,
 }
 
+pub trait InputInterface {
+    fn receive_key(&mut self);
+}
+
 impl InputInterface for Universe {
-    fn receive_key() {
-        match ckey.key {
-            KeyboardKey::KEY_LEFT => {
-                if universe.focused_tetrimino.within_boundary(Direction::Left)
-                    && !Tetrimino::will_collide_all(
-                        &universe.focused_tetrimino,
-                        &universe.stagnant_tetriminos,
-                        Direction::Left,
-                    )
-                {
-                    universe.focused_tetrimino.move_left()
+    fn receive_key(&mut self) {
+        for key in self.tetrimino_controls.get_queue() {
+            match key {
+                KeyboardKey::KEY_LEFT => {
+                    if self.focused_tetrimino.within_boundary(Direction::Left)
+                        && !Tetrimino::will_collide_all(
+                            &self.focused_tetrimino,
+                            &self.stagnant_tetriminos,
+                            Direction::Left,
+                        )
+                    {
+                        self.focused_tetrimino.move_left()
+                    }
                 }
-            }
-            KeyboardKey::KEY_RIGHT => {
-                if universe.focused_tetrimino.within_boundary(Direction::Right)
-                    && !Tetrimino::will_collide_all(
-                        &universe.focused_tetrimino,
-                        &universe.stagnant_tetriminos,
-                        Direction::Right,
-                    )
-                {
-                    universe.focused_tetrimino.move_right()
+                KeyboardKey::KEY_RIGHT => {
+                    if self.focused_tetrimino.within_boundary(Direction::Right)
+                        && !Tetrimino::will_collide_all(
+                            &self.focused_tetrimino,
+                            &self.stagnant_tetriminos,
+                            Direction::Right,
+                        )
+                    {
+                        self.focused_tetrimino.move_right()
+                    }
                 }
+                KeyboardKey::KEY_DOWN => self.fall_focused(),
+                _ => {}
             }
-            KeyboardKey::KEY_DOWN => universe.fall_focused(),
-            _ => {}
         }
+        self.tetrimino_controls.clear_queue();
     }
 }
 
@@ -174,8 +181,10 @@ impl Universe {
     pub fn tick(&mut self, rl: &RaylibHandle) {
         *self.ticks_mut() += 1;
 
+        self.tetrimino_controls.tick(rl);
+        self.receive_key();
+
         // Literally just move current .y down
-        self.tetrimino_controls.tick(rl, &mut self);
         // Falls at the rate of 6 per second
 
         if self.ticks() % 12 == 0 {

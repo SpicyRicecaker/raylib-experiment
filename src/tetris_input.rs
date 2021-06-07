@@ -125,11 +125,11 @@ pub mod tetris {
     // The framework that keyboard input and keys are built on
     use raylib::prelude::*;
     // Our implementation of tetriminos
-    use crate::{Direction, Tetrimino, Universe};
     pub struct TetriminoControls {
         // Not sure if fallrate really fits the agenda here
         FALLRATE: u32,
         controlled_keys: Vec<ControlledKey>,
+        queue: Vec<KeyboardKey>,
     }
 
     // This implementation isn't gonna work, if we have for example more functions that we want the keys to do than move the tetrimino
@@ -166,7 +166,16 @@ pub mod tetris {
             TetriminoControls {
                 FALLRATE,
                 controlled_keys,
+                queue: Vec::new(),
             }
+        }
+
+        pub fn clear_queue(&mut self) {
+            self.queue.clear();
+        }
+
+        pub fn get_queue(&self) -> Vec<KeyboardKey> {
+            self.queue.clone()
         }
 
         pub fn tick(
@@ -176,9 +185,10 @@ pub mod tetris {
             // stagnant_tetriminos: &Vec<Tetrimino>,
             // universe: &mut Universe,
         ) {
-            for ckey in self.controlled_keys.iter_mut() {
-                if ckey.tick(rl) {
-                };
+            for controlled_key in self.controlled_keys.iter_mut() {
+                if controlled_key.tick(rl) {
+                    self.queue.push(controlled_key.key)
+                }
             }
         }
     }

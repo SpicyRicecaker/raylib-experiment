@@ -10,9 +10,9 @@
       - [x] replace all instances of `generate_tetrimino_from_type`
 
 - [x] Remove full lines
-- [ ] Long press go down
-  - [ ] Remove ability of tetris input to modify universe; universe should provide its own interface and accept keys from tetris input
-- [ ] _Rotation_
+- [x] Long press go down
+  - [x] Remove ability of tetris input to modify universe; universe should provide its own interface and accept keys from tetris input
 - [ ] Game Over / Restart Screen
+- [ ] _Rotation_
 
 - [ ] colors
