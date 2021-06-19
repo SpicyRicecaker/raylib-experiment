@@ -181,12 +181,24 @@ impl Universe {
     }
 
     fn rotate_focused_left(&mut self) {
-        for coord in self.focused_tetrimino.coords_mut() {
-            // First we need to move the piece to origin
+        let center_x = self.focused_tetrimino.coords()[0].x;
+        let center_y = self.focused_tetrimino.coords()[0].y;
 
-            swap(&mut coord.x, &mut coord.y);
-            // i.x = -i.x;
-            // rcoord.y = 1;
+        for i in 1..self.focused_tetrimino.coords().len() {
+            let t = &mut self.focused_tetrimino.coords_mut()[i];
+
+            // Get the original coords by subtracting the origin
+            // e.g. (1, 1), (1, 0), etc.
+            let orig_x = t.x as i32 - center_x as i32;
+            let orig_y = t.y as i32 - center_y as i32;
+
+            // Rotate the coords 90 degrees to the left
+            let flipped_x = -orig_y;
+            let flipped_y = orig_x;
+
+            // Add the coords back
+            t.x = (flipped_x + center_x as i32) as u32;
+            t.y = (flipped_y + center_y as i32) as u32;
         }
     }
 

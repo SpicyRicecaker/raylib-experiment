@@ -41,13 +41,6 @@ pub enum Direction {
     Right,
 }
 
-/// A set of coords with a center
-/// Coords does not hold center so keep that in mind
-// pub struct TetriminoCoords {
-//     center: Coord,
-//     coords: Vec<Coord>
-// }
-
 /// Built off tetrimino coords
 #[derive(Clone)]
 pub struct Tetrimino {
@@ -234,9 +227,7 @@ impl Distribution<TetriminoType> for Standard {
 
 impl TetriminoType {
     pub fn generate_tetrimino_rand() -> Tetrimino {
-        // DEBUG
         TetriminoType::generate_tetrimino_from_type(rand::random())
-        // TetriminoType::generate_tetrimino_from_type(TetriminoType::O)
     }
     /// Function that takes in a tetrimino type and returns a spawned tetrimino
     /// Important to realize that the first index of reference coords are the center of the tetrimino

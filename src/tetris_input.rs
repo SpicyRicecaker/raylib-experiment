@@ -85,12 +85,11 @@ pub mod utils {
                             if buffer > self.repeat.delay {
                                 self.state = KeyboardState::Held;
                             }
-                            return false;
                         } else {
                             // Otherwise close the buffer
                             self.close_buffer();
-                            return false;
                         }
+                        return false;
                     }
                     // If the key has been held for a suffcient amount of time
                     KeyboardState::Held => {
@@ -109,8 +108,8 @@ pub mod utils {
                             // Otherwise close the buffer
                             self.set_state(KeyboardState::Initiation);
                             self.close_buffer();
-                            return false;
                         }
+                        return false;
                     }
                 }
             }
@@ -134,7 +133,6 @@ pub mod tetris {
     // This implementation isn't gonna work, if we have for example more functions that we want the keys to do than move the tetrimino
     impl TetriminoControls {
         pub fn new() -> Self {
-            const FALLRATE: u32 = 6;
             let controlled_keys = vec![
                 ControlledKey {
                     key: KeyboardKey::KEY_LEFT,
@@ -153,12 +151,12 @@ pub mod tetris {
                 },
                 ControlledKey {
                     key: KeyboardKey::KEY_Z,
-                    repeat: Repeat { delay: 0, rate: 0 },
+                    repeat: Repeat { delay: 8, rate: 8 },
                     ..Default::default()
                 },
                 ControlledKey {
                     key: KeyboardKey::KEY_C,
-                    repeat: Repeat { delay: 0, rate: 0 },
+                    repeat: Repeat { delay: 8, rate: 8 },
                     ..Default::default()
                 },
             ];
@@ -176,13 +174,7 @@ pub mod tetris {
             self.queue.clone()
         }
 
-        pub fn tick(
-            &mut self,
-            rl: &RaylibHandle,
-            // focused_tetrimino: &mut Tetrimino,
-            // stagnant_tetriminos: &Vec<Tetrimino>,
-            // universe: &mut Universe,
-        ) {
+        pub fn tick(&mut self, rl: &RaylibHandle) {
             for controlled_key in self.controlled_keys.iter_mut() {
                 if controlled_key.tick(rl) {
                     self.queue.push(controlled_key.key)

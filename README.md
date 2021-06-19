@@ -12,8 +12,12 @@
 - [x] Remove full lines
 - [x] Long press go down
   - [x] Remove ability of tetris input to modify universe; universe should provide its own interface and accept keys from tetris input
-- [ ] _Rotation_
+- [] _Rotation_
   - WE DON'T NEED TO HOLD CENTER
+  - [ ] Need to add the offset tables
 - [ ] Game Over / Restart Screen
-
 - [ ] colors
+- [ ] sound
+  - [ ] music in the background
+  - [ ] TETRIS for !
+  - [ ] bouncing against the side
