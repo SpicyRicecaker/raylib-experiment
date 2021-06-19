@@ -127,7 +127,6 @@ pub mod tetris {
     // Our implementation of tetriminos
     pub struct TetriminoControls {
         // Not sure if fallrate really fits the agenda here
-        FALLRATE: u32,
         controlled_keys: Vec<ControlledKey>,
         queue: Vec<KeyboardKey>,
     }
@@ -164,7 +163,6 @@ pub mod tetris {
                 },
             ];
             TetriminoControls {
-                FALLRATE,
                 controlled_keys,
                 queue: Vec::new(),
             }

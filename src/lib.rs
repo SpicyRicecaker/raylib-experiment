@@ -1,7 +1,7 @@
 mod tetriminos;
 mod tetris_input;
 
-use std::collections::HashMap;
+use std::{collections::HashMap, mem::swap};
 
 use raylib::prelude::*;
 use tetriminos::*;
@@ -126,6 +126,8 @@ impl InputInterface for Universe {
                     }
                 }
                 KeyboardKey::KEY_DOWN => self.fall_focused(),
+                KeyboardKey::KEY_Z => self.rotate_focused_left(),
+                KeyboardKey::KEY_C => self.rotate_focused_right(),
                 _ => {}
             }
         }
@@ -178,6 +180,18 @@ impl Universe {
         }
     }
 
+    fn rotate_focused_left(&mut self) {
+        for coord in self.focused_tetrimino.coords_mut() {
+            // First we need to move the piece to origin
+
+            swap(&mut coord.x, &mut coord.y);
+            // i.x = -i.x;
+            // rcoord.y = 1;
+        }
+    }
+
+    fn rotate_focused_right(&mut self) {}
+
     pub fn tick(&mut self, rl: &RaylibHandle) {
         *self.ticks_mut() += 1;
 
@@ -200,7 +214,7 @@ impl Universe {
         // Setup hash
         // We should probably store the hashmap, this way we won't have to update it every tick
         for tetrimino in self.stagnant_tetriminos.iter() {
-            for coord in tetrimino.real_coords() {
+            for coord in tetrimino.coords() {
                 let e = levels.entry(coord.y).or_insert(0);
                 *e += 1;
             }
@@ -218,15 +232,15 @@ impl Universe {
                 let mut i = 0;
                 while i != self.stagnant_tetriminos.len() {
                     let mut j = 0;
-                    while j != self.stagnant_tetriminos[i].real_coords().len() {
-                        if self.stagnant_tetriminos[i].real_coords()[j].y == level {
-                            self.stagnant_tetriminos[i].real_coords_mut().remove(j);
+                    while j != self.stagnant_tetriminos[i].coords().len() {
+                        if self.stagnant_tetriminos[i].coords()[j].y == level {
+                            self.stagnant_tetriminos[i].coords_mut().remove(j);
                         } else {
                             j += 1;
                         }
                     }
                     // No memory leaks thank you
-                    if self.stagnant_tetriminos[i].real_coords().is_empty() {
+                    if self.stagnant_tetriminos[i].coords().is_empty() {
                         self.stagnant_tetriminos.remove(i);
                     } else {
                         i += 1;
@@ -242,9 +256,9 @@ impl Universe {
         // If we implemented it with an array we would only need to iterate over the board once
         if something_happened {
             for i in 0..self.stagnant_tetriminos.len() {
-                for j in 0..self.stagnant_tetriminos[i].real_coords().len() {
-                    self.stagnant_tetriminos[i].real_coords_mut()[j].y -=
-                        diff[self.stagnant_tetriminos[i].real_coords()[j].y as usize];
+                for j in 0..self.stagnant_tetriminos[i].coords().len() {
+                    self.stagnant_tetriminos[i].coords_mut()[j].y -=
+                        diff[self.stagnant_tetriminos[i].coords()[j].y as usize];
                 }
             }
         }
@@ -348,16 +362,15 @@ mod test {
 
     #[test]
     fn test_move_down() {
-        let mut tetrimino = Tetrimino::generate_tetrimino_from_center(
+        let mut tetrimino = Tetrimino::spawn_tetrimno(
             vec![
+                Coord::new(1, 0),
                 Coord::new(0, 0),
                 Coord::new(1, 1),
-                Coord::new(1, 0),
                 Coord::new(2, 0),
             ],
-            Coord::new(1, 0),
-            TetriminoType::T,
             Coord::new(5, 22),
+            TetriminoType::T,
         );
         tetrimino.move_down();
 
@@ -368,24 +381,23 @@ mod test {
             Coord { x: 6, y: 21 },
         ];
 
-        dbg!(&right_real_coords, tetrimino.real_coords());
+        dbg!(&right_real_coords, tetrimino.coords());
 
         for idx in (0..4).into_iter() {
-            assert_eq!(right_real_coords.get(idx), tetrimino.real_coords().get(idx))
+            assert_eq!(right_real_coords.get(idx), tetrimino.coords().get(idx))
         }
     }
     #[test]
     fn test_move_down_3() {
-        let mut tetrimino = Tetrimino::generate_tetrimino_from_center(
+        let mut tetrimino = Tetrimino::spawn_tetrimno(
             vec![
                 Coord::new(0, 0),
                 Coord::new(1, 1),
                 Coord::new(1, 0),
                 Coord::new(2, 0),
             ],
-            Coord::new(1, 0),
-            TetriminoType::T,
             Coord::new(5, 22),
+            TetriminoType::T,
         );
         tetrimino.move_down();
         tetrimino.move_down();
@@ -398,10 +410,10 @@ mod test {
             Coord { x: 6, y: 19 },
         ];
 
-        dbg!(&right_real_coords, tetrimino.real_coords());
+        dbg!(&right_real_coords, tetrimino.coords());
 
         for idx in (0..4).into_iter() {
-            assert_eq!(right_real_coords.get(idx), tetrimino.real_coords().get(idx))
+            assert_eq!(right_real_coords.get(idx), tetrimino.coords().get(idx))
         }
     }
 
