@@ -16,7 +16,7 @@ fn main() {
 
     rl.set_target_fps(*config.fps());
     
-    // Debug, create new tetrimino and add it to the universe
+    // Debug, create new tetromino and add it to the universe
 
     while !rl.window_should_close() {
         universe.tick(&rl);

@@ -4,6 +4,36 @@ use std::collections::HashSet;
 
 use crate::Config;
 
+#[derive(Clone)]
+pub struct CircularNum {
+    rn: u32,
+    max: u32,
+}
+
+/// Based on
+/// ```rust
+/// fn pos_neg_modulus(&mut self, x: u32, m: u32) -> u32 {
+///     (x % m + m) % m
+/// }
+/// ```
+impl CircularNum {
+    /// Increments by 1, wrapping around if it hits max
+    pub fn next(&mut self) {
+        self.rn = (self.rn + 1) % self.max;
+    }
+
+    /// Decrements by 1, wrapping around if it hits below 0
+    pub fn prev(&mut self) {
+        self.rn = (self.rn - 1 + self.max) % self.max;
+    }
+}
+
+impl Default for CircularNum {
+    fn default() -> Self {
+        CircularNum { rn: 0, max: 4 }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Coord {
     pub x: u32,
@@ -41,14 +71,15 @@ pub enum Direction {
     Right,
 }
 
-/// Built off tetrimino coords
+/// Built off tetromino coords
 #[derive(Clone)]
-pub struct Tetrimino {
+pub struct Tetromino {
     coords: Vec<Coord>,
-    tetrimino_type: TetriminoType,
+    tetromino_type: TetrominoType,
+    rotation_state: CircularNum,
 }
 
-impl Tetrimino {
+impl Tetromino {
     pub fn coords(&self) -> &Vec<Coord> {
         &self.coords
     }
@@ -56,16 +87,16 @@ impl Tetrimino {
         &mut self.coords
     }
 
-    /// Generates a tetrimino, given a set of coords, a type
-    /// The center of the tetrimino, as well as the location it should be spawned in
+    /// Generates a tetromino, given a set of coords, a type
+    /// The center of the tetromino, as well as the location it should be spawned in
     pub fn spawn_tetrimno(
         // List of coords
         reference_coords: Vec<Coord>,
-        // Real center is where to spawn the tetrimino
+        // Real center is where to spawn the tetromino
         spawn_coords: Coord,
-        // Type of tetrimino
-        tetrimino_type: TetriminoType,
-    ) -> Tetrimino {
+        // Type of tetromino
+        tetromino_type: TetrominoType,
+    ) -> Tetromino {
         // Generate real coords from reference coords
         let coords = reference_coords
             .iter()
@@ -79,9 +110,10 @@ impl Tetrimino {
             })
             .collect();
 
-        Tetrimino {
+        Tetromino {
             coords,
-            tetrimino_type,
+            tetromino_type,
+            rotation_state: CircularNum::default(),
         }
     }
 
@@ -95,7 +127,7 @@ impl Tetrimino {
         let dy = config.h() / 20;
         let dx = *config.actual_w() as u32 / 10;
 
-        // For every coord in the tetrimino (4 coords in total)
+        // For every coord in the tetromino (4 coords in total)
         for (idx, coord) in self.coords.iter().enumerate() {
             if coord.y >= 20 {
                 continue;
@@ -150,8 +182,8 @@ impl Tetrimino {
     }
 
     pub fn will_collide_all(
-        t: &Tetrimino,
-        stagnant_tetriminos: &[Tetrimino],
+        t: &Tetromino,
+        stagnant_tetrominos: &[Tetromino],
         direction: Direction,
     ) -> bool {
         let (dx, dy) = match direction {
@@ -161,15 +193,15 @@ impl Tetrimino {
             Direction::Right => (1, 0),
         };
 
-        for stagnant_tetrimino in stagnant_tetriminos {
-            if Tetrimino::will_collide(t, stagnant_tetrimino, dx, dy) {
+        for stagnant_tetromino in stagnant_tetrominos {
+            if Tetromino::will_collide(t, stagnant_tetromino, dx, dy) {
                 return true;
             }
         }
         false
     }
 
-    pub fn will_collide(f: &Tetrimino, s: &Tetrimino, dx: i32, dy: i32) -> bool {
+    pub fn will_collide(f: &Tetromino, s: &Tetromino, dx: i32, dy: i32) -> bool {
         let mut coords: HashSet<Coord> = HashSet::new();
         for f_coord in f.coords.iter() {
             coords.insert(Coord {
@@ -195,10 +227,20 @@ impl Tetrimino {
             *coord.mut_x() += 1;
         }
     }
+
+    /// Get a mutable reference to the tetromino's rotation state.
+    pub fn rotation_state_mut(&mut self) -> &mut CircularNum {
+        &mut self.rotation_state
+    }
+
+    /// Get a reference to the tetromino's tetromino type.
+    pub fn tetromino_type(&self) -> &TetrominoType {
+        &self.tetromino_type
+    }
 }
 
 #[derive(Clone, Copy)]
-pub enum TetriminoType {
+pub enum TetrominoType {
     I,
     J,
     L,
@@ -208,16 +250,16 @@ pub enum TetriminoType {
     Z,
 }
 
-impl Distribution<TetriminoType> for Standard {
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> TetriminoType {
+impl Distribution<TetrominoType> for Standard {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> TetrominoType {
         match rng.gen_range(0..7) {
-            0 => TetriminoType::I,
-            1 => TetriminoType::J,
-            2 => TetriminoType::L,
-            3 => TetriminoType::O,
-            4 => TetriminoType::S,
-            5 => TetriminoType::T,
-            6 => TetriminoType::Z,
+            0 => TetrominoType::I,
+            1 => TetrominoType::J,
+            2 => TetrominoType::L,
+            3 => TetrominoType::O,
+            4 => TetrominoType::S,
+            5 => TetrominoType::T,
+            6 => TetrominoType::Z,
             _ => {
                 panic!()
             }
@@ -225,15 +267,15 @@ impl Distribution<TetriminoType> for Standard {
     }
 }
 
-impl TetriminoType {
-    pub fn generate_tetrimino_rand() -> Tetrimino {
-        TetriminoType::generate_tetrimino_from_type(rand::random())
+impl TetrominoType {
+    pub fn generate_tetromino_rand() -> Tetromino {
+        TetrominoType::generate_tetromino_from_type(rand::random())
     }
-    /// Function that takes in a tetrimino type and returns a spawned tetrimino
-    /// Important to realize that the first index of reference coords are the center of the tetrimino
-    pub fn generate_tetrimino_from_type(tetrimino_type: TetriminoType) -> Tetrimino {
-        match tetrimino_type {
-            TetriminoType::I => Tetrimino::spawn_tetrimno(
+    /// Function that takes in a tetromino type and returns a spawned tetromino
+    /// Important to realize that the first index of reference coords are the center of the tetromino
+    pub fn generate_tetromino_from_type(tetromino_type: TetrominoType) -> Tetromino {
+        match tetromino_type {
+            TetrominoType::I => Tetromino::spawn_tetrimno(
                 vec![
                     Coord::new(1, 0),
                     Coord::new(0, 0),
@@ -241,9 +283,9 @@ impl TetriminoType {
                     Coord::new(3, 0),
                 ],
                 Coord::new(5, 22),
-                TetriminoType::I,
+                TetrominoType::I,
             ),
-            TetriminoType::J => Tetrimino::spawn_tetrimno(
+            TetrominoType::J => Tetromino::spawn_tetrimno(
                 vec![
                     Coord::new(1, 0),
                     Coord::new(0, 0),
@@ -251,9 +293,9 @@ impl TetriminoType {
                     Coord::new(0, 1),
                 ],
                 Coord::new(5, 22),
-                TetriminoType::J,
+                TetrominoType::J,
             ),
-            TetriminoType::L => Tetrimino::spawn_tetrimno(
+            TetrominoType::L => Tetromino::spawn_tetrimno(
                 vec![
                     Coord::new(1, 0),
                     Coord::new(0, 0),
@@ -261,9 +303,9 @@ impl TetriminoType {
                     Coord::new(2, 1),
                 ],
                 Coord::new(5, 22),
-                TetriminoType::L,
+                TetrominoType::L,
             ),
-            TetriminoType::O => Tetrimino::spawn_tetrimno(
+            TetrominoType::O => Tetromino::spawn_tetrimno(
                 vec![
                     Coord::new(0, 0),
                     Coord::new(1, 0),
@@ -271,9 +313,9 @@ impl TetriminoType {
                     Coord::new(1, 1),
                 ],
                 Coord::new(5, 22),
-                TetriminoType::O,
+                TetrominoType::O,
             ),
-            TetriminoType::S => Tetrimino::spawn_tetrimno(
+            TetrominoType::S => Tetromino::spawn_tetrimno(
                 vec![
                     Coord::new(1, 0),
                     Coord::new(0, 0),
@@ -281,9 +323,9 @@ impl TetriminoType {
                     Coord::new(2, 1),
                 ],
                 Coord::new(5, 22),
-                TetriminoType::S,
+                TetrominoType::S,
             ),
-            TetriminoType::T => Tetrimino::spawn_tetrimno(
+            TetrominoType::T => Tetromino::spawn_tetrimno(
                 vec![
                     Coord::new(1, 0),
                     Coord::new(0, 0),
@@ -291,9 +333,9 @@ impl TetriminoType {
                     Coord::new(2, 0),
                 ],
                 Coord::new(5, 22),
-                TetriminoType::T,
+                TetrominoType::T,
             ),
-            TetriminoType::Z => Tetrimino::spawn_tetrimno(
+            TetrominoType::Z => Tetromino::spawn_tetrimno(
                 vec![
                     Coord::new(1, 0),
                     Coord::new(2, 0),
@@ -301,8 +343,8 @@ impl TetriminoType {
                     Coord::new(1, 1),
                 ],
                 Coord::new(5, 22),
-                TetriminoType::Z,
-            )
+                TetrominoType::Z,
+            ),
         }
     }
 }
@@ -312,8 +354,8 @@ mod test {
 
     use super::*;
     #[test]
-    fn test_t_tetrimino_spawn() {
-        let tetrimino = Tetrimino::spawn_tetrimno(
+    fn test_t_tetromino_spawn() {
+        let tetromino = Tetromino::spawn_tetrimno(
             vec![
                 Coord::new(0, 0),
                 Coord::new(1, 1),
@@ -321,7 +363,7 @@ mod test {
                 Coord::new(2, 0),
             ],
             Coord::new(5, 22),
-            TetriminoType::T,
+            TetrominoType::T,
         );
         let right_real_coords = vec![
             Coord { x: 4, y: 22 },
@@ -329,15 +371,15 @@ mod test {
             Coord { x: 5, y: 22 },
             Coord { x: 6, y: 22 },
         ];
-        dbg!(&right_real_coords, tetrimino.coords());
+        dbg!(&right_real_coords, tetromino.coords());
 
         for idx in (0..4).into_iter() {
-            assert_eq!(right_real_coords.get(idx), tetrimino.coords().get(idx))
+            assert_eq!(right_real_coords.get(idx), tetromino.coords().get(idx))
         }
     }
     #[test]
     fn test_boundary_positive() {
-        let tetrimino = Tetrimino::spawn_tetrimno(
+        let tetromino = Tetromino::spawn_tetrimno(
             vec![
                 Coord::new(0, 0),
                 Coord::new(1, 1),
@@ -345,14 +387,14 @@ mod test {
                 Coord::new(2, 0),
             ],
             Coord::new(5, 10),
-            TetriminoType::T,
+            TetrominoType::T,
         );
-        assert!(tetrimino.within_boundary(Direction::Down));
+        assert!(tetromino.within_boundary(Direction::Down));
     }
 
     #[test]
     fn test_boundary_negative() {
-        let tetrimino = Tetrimino::spawn_tetrimno(
+        let tetromino = Tetromino::spawn_tetrimno(
             vec![
                 Coord::new(0, 0),
                 Coord::new(1, 1),
@@ -360,8 +402,8 @@ mod test {
                 Coord::new(2, 0),
             ],
             Coord::new(5, 0),
-            TetriminoType::T,
+            TetrominoType::T,
         );
-        assert!(tetrimino.within_boundary(Direction::Down));
+        assert!(tetromino.within_boundary(Direction::Down));
     }
 }

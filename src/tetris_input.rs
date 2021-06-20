@@ -1,5 +1,5 @@
 // Should be some sort of component architecture
-// Wonder if we should make a tetrimino util, call that from here
+// Wonder if we should make a tetromino util, call that from here
 pub mod utils {
     use raylib::prelude::*;
 
@@ -99,7 +99,7 @@ pub mod utils {
                             self.increment_buffer();
                             // If the # of key presses surpases repeat rate
                             if buffer > self.repeat.rate {
-                                // Move the tetrimino, reset buffer count
+                                // Move the tetromino, reset buffer count
                                 self.open_buffer();
                                 return true;
                             }
@@ -123,15 +123,15 @@ pub mod tetris {
     use super::utils::*;
     // The framework that keyboard input and keys are built on
     use raylib::prelude::*;
-    // Our implementation of tetriminos
-    pub struct TetriminoControls {
+    // Our implementation of tetrominos
+    pub struct TetrominoControls {
         // Not sure if fallrate really fits the agenda here
         controlled_keys: Vec<ControlledKey>,
         queue: Vec<KeyboardKey>,
     }
 
-    // This implementation isn't gonna work, if we have for example more functions that we want the keys to do than move the tetrimino
-    impl TetriminoControls {
+    // This implementation isn't gonna work, if we have for example more functions that we want the keys to do than move the tetromino
+    impl TetrominoControls {
         pub fn new() -> Self {
             let controlled_keys = vec![
                 ControlledKey {
@@ -160,7 +160,7 @@ pub mod tetris {
                     ..Default::default()
                 },
             ];
-            TetriminoControls {
+            TetrominoControls {
                 controlled_keys,
                 queue: Vec::new(),
             }
