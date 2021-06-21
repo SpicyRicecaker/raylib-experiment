@@ -1,23 +1,11 @@
-# WIP
+# Tetris-rs
+Written in rust, with the [raylib-rs](https://github.com/deltaphc/raylib-rs) bindings for the [raylib](https://github.com/raysan5/raylib) library. 
 
-- [x] left & right hit detection
-  - [x] No panic moving tetromino to left
-  - [x] No moving tetromino over right boundary
-- [x] generation of 7 tetrominos randomly
-
-  - `rand` crate?
-    - [x] implement `tetrominos.rs` -> ln `224`, random enums please!
-      - [x] replace all instances of `generate_tetromino_from_type`
-
-- [x] Remove full lines
-- [x] Long press go down
-  - [x] Remove ability of tetris input to modify universe; universe should provide its own interface and accept keys from tetris input
-- [ ] _Rotation_
-  - WE DON'T NEED TO HOLD CENTER
-  - [ ] Need to add the offset tables
-- [ ] Game Over / Restart Screen
-- [ ] colors
-- [ ] sound
-  - [ ] music in the background
-  - [ ] TETRIS for !
-  - [ ] bouncing against the side
+## Implementation
+Board: Used a vector of tetrominos that hold their own coords rather than a global array (for some reason), with width and height just for rendering  
+Tetrominos: Struct of vector of coords, with the center being the first coord in the vector  
+Collisions: Comparing current focused tetromino with every other tetromino on the board   
+Rotations: Used an [offset table](https://harddrop.com/wiki/SRS#How_Guideline_SRS_Really_Works) with indices to center `O` and `I` tetromino rotations as well as take care of wallkicks  
+## Helpful Resources
+[How to Properly Rotate Tetris Pieces - Game Development Tutorial](https://www.youtube.com/watch?v=yIpk5TJ_uaI&t=1235s) A video explaining how to implement tetromino rotations by Turbo Makes Games
+- [SRS](https://harddrop.com/wiki/SRS#How_Guideline_SRS_Really_Works) website mentioned in the above video with offset data and explanations for how to use it
