@@ -17,14 +17,17 @@ pub struct CircularNum {
 /// }
 /// ```
 impl CircularNum {
-    /// Increments by 1, wrapping around if it hits max
-    pub fn next(&mut self) {
-        self.rn = (self.rn + 1) % self.max;
+    /// Takes in any dx
+    pub fn increment(&self, dx: i32) -> u32 {
+        // DEBUG
+        // self.rn = ((self.rn as i32 + dx + self.max as i32) % self.max as i32) as u32;
+        // &self.rn
+        ((self.rn as i32 + dx + self.max as i32) % self.max as i32) as u32
     }
 
-    /// Decrements by 1, wrapping around if it hits below 0
-    pub fn prev(&mut self) {
-        self.rn = (self.rn - 1 + self.max) % self.max;
+    /// Get a reference to the circular num's rn.
+    pub fn rn(&self) -> &u32 {
+        &self.rn
     }
 }
 
@@ -80,13 +83,6 @@ pub struct Tetromino {
 }
 
 impl Tetromino {
-    pub fn coords(&self) -> &Vec<Coord> {
-        &self.coords
-    }
-    pub fn coords_mut(&mut self) -> &mut Vec<Coord> {
-        &mut self.coords
-    }
-
     /// Generates a tetromino, given a set of coords, a type
     /// The center of the tetromino, as well as the location it should be spawned in
     pub fn spawn_tetrimno(
@@ -146,10 +142,6 @@ impl Tetromino {
             )
         }
     }
-    // Moves all real coords
-    pub fn move_down(&mut self) {
-        self.coords.iter_mut().for_each(|c| c.y -= 1);
-    }
 
     pub fn within_boundary(&self, direction: Direction) -> bool {
         match direction {
@@ -181,20 +173,22 @@ impl Tetromino {
         }
     }
 
+    pub fn get_dxdy(direction: Direction) -> [i32; 2] {
+        match direction {
+            Direction::Down => [0, -1],
+            Direction::Up => [0, 1],
+            Direction::Left => [-1, 0],
+            Direction::Right => [1, 0],
+        }
+    }
+
     pub fn will_collide_all(
         t: &Tetromino,
         stagnant_tetrominos: &[Tetromino],
-        direction: Direction,
+        dxdy: [i32; 2],
     ) -> bool {
-        let (dx, dy) = match direction {
-            Direction::Down => (0, -1),
-            Direction::Up => (0, -1),
-            Direction::Left => (-1, 0),
-            Direction::Right => (1, 0),
-        };
-
         for stagnant_tetromino in stagnant_tetrominos {
-            if Tetromino::will_collide(t, stagnant_tetromino, dx, dy) {
+            if Tetromino::will_collide(t, stagnant_tetromino, dxdy[0], dxdy[1]) {
                 return true;
             }
         }
@@ -205,8 +199,8 @@ impl Tetromino {
         let mut coords: HashSet<Coord> = HashSet::new();
         for f_coord in f.coords.iter() {
             coords.insert(Coord {
-                x: (*f_coord.x() as i32 + dx) as u32,
-                y: (*f_coord.y() as i32 + dy) as u32,
+                x: (f_coord.x as i32 + dx) as u32,
+                y: (f_coord.y as i32 + dy) as u32,
             });
         }
         for s_coord in s.coords.iter() {
@@ -217,17 +211,16 @@ impl Tetromino {
         false
     }
 
-    pub fn move_left(&mut self) {
-        for coord in self.coords_mut() {
-            coord.x -= 1;
-        }
+    pub fn move_by(&mut self, dx_dy: [i32; 2]) {
+        // Moves all real coords
+        self.coords.iter_mut().for_each(|c| {
+            c.x = (c.x as i32 + dx_dy[0]) as u32;
+            c.y = (c.y as i32 + dx_dy[1]) as u32;
+        });
     }
-    pub fn move_right(&mut self) {
-        for coord in self.coords_mut() {
-            *coord.mut_x() += 1;
-        }
-    }
+}
 
+impl Tetromino {
     /// Get a mutable reference to the tetromino's rotation state.
     pub fn rotation_state_mut(&mut self) -> &mut CircularNum {
         &mut self.rotation_state
@@ -236,6 +229,18 @@ impl Tetromino {
     /// Get a reference to the tetromino's tetromino type.
     pub fn tetromino_type(&self) -> &TetrominoType {
         &self.tetromino_type
+    }
+
+    /// Get a reference to the tetromino's rotation state.
+    pub fn rotation_state(&self) -> &CircularNum {
+        &self.rotation_state
+    }
+
+    pub fn coords(&self) -> &Vec<Coord> {
+        &self.coords
+    }
+    pub fn coords_mut(&mut self) -> &mut Vec<Coord> {
+        &mut self.coords
     }
 }
 

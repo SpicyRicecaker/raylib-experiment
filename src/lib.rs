@@ -1,14 +1,12 @@
 mod tetris_input;
 mod tetrominos;
 
-use std::{collections::HashMap, mem::swap};
+use std::collections::HashMap;
 
 use raylib::prelude::*;
 use tetrominos::*;
 
 use tetris_input::tetris::TetrominoControls;
-// use raylib::consts::KeyboardKey;
-// use raylib::{prelude::RaylibDrawHandle, RaylibHandle};
 
 /// Tetrominos of type J, L, S, T or Z each have 5 tests, accounting for each of the 4 indices, each with a cartesion coord
 const JLSTZ_OFFSET_DATA: [[[i32; 2]; 4]; 5] = [
@@ -32,6 +30,15 @@ const O_OFFSET_DATA: [[[i32; 2]; 4]; 1] = [[[0, 0], [0, -1], [-1, -1], [-1, 0]]]
 pub enum RotationDirection {
     Clockwise,
     CounterClockwise,
+}
+impl RotationDirection {
+    // Gets reverse
+    pub fn flip(direction: RotationDirection) -> RotationDirection {
+        match direction {
+            RotationDirection::Clockwise => RotationDirection::CounterClockwise,
+            RotationDirection::CounterClockwise => RotationDirection::Clockwise,
+        }
+    }
 }
 
 pub struct Config {
@@ -132,10 +139,10 @@ impl InputInterface for Universe {
                         && !Tetromino::will_collide_all(
                             &self.focused_tetromino,
                             &self.stagnant_tetrominos,
-                            Direction::Left,
+                            Tetromino::get_dxdy(Direction::Left),
                         )
                     {
-                        self.focused_tetromino.move_left()
+                        self.focused_tetromino.move_by(Tetromino::get_dxdy(Direction::Left))
                     }
                 }
                 KeyboardKey::KEY_RIGHT => {
@@ -143,10 +150,10 @@ impl InputInterface for Universe {
                         && !Tetromino::will_collide_all(
                             &self.focused_tetromino,
                             &self.stagnant_tetrominos,
-                            Direction::Right,
+                            Tetromino::get_dxdy(Direction::Right),
                         )
                     {
-                        self.focused_tetromino.move_right()
+                        self.focused_tetromino.move_by(Tetromino::get_dxdy(Direction::Right))
                     }
                 }
                 KeyboardKey::KEY_DOWN => self.fall_focused(),
@@ -180,27 +187,26 @@ impl Universe {
 
     fn fall_focused(&mut self) {
         // Code that determines moving the pieces down
-        let within_boundary = self.focused_tetromino().within_boundary(Direction::Down);
+        let within_boundary = self.focused_tetromino.within_boundary(Direction::Down);
         let mut collision = false;
 
         if within_boundary {
             collision = Tetromino::will_collide_all(
-                self.focused_tetromino(),
-                self.stagnant_tetrominos(),
-                Direction::Down,
+                &self.focused_tetromino,
+                &self.stagnant_tetrominos,
+                Tetromino::get_dxdy(Direction::Down),
             );
         }
 
         if !collision && within_boundary {
-            self.focused_tetromino_mut().move_down();
+            self.focused_tetromino.move_by(Tetromino::get_dxdy(Direction::Down));
         } else {
             // Solidify the old current
             let temp = self.focused_tetromino.clone();
             // let temp = self.focused_tetromino.clone();
-            self.stagnant_tetromino_mut().push(temp);
+            self.stagnant_tetrominos.push(temp);
             // We need to generate a new current and solidify the old current
-
-            *self.focused_tetromino_mut() = TetrominoType::generate_tetromino_rand();
+            self.focused_tetromino = TetrominoType::generate_tetromino_rand();
         }
     }
 
@@ -211,16 +217,16 @@ impl Universe {
         // For any other piece (i.e., J, L, S, T, Z)
 
         // We start at 0 go to 90, 180, and 270 deg
-        let offset_indices = [0, 1, 2, 3];
+        // let offset_indices = [0, 1, 2, 3];
     }
 
     fn rotate_focused(&mut self, rot_direction: RotationDirection) {
         let center_x = self.focused_tetromino.coords()[0].x;
         let center_y = self.focused_tetromino.coords()[0].y;
 
-        let m = match rot_direction {
-            RotationDirection::Clockwise => [[0, -1], [1, 0]],
-            RotationDirection::CounterClockwise => [[0, 1], [-1, 0]],
+        let (next_index_diff, m) = match rot_direction {
+            RotationDirection::Clockwise => (1, [[0, -1], [1, 0]]),
+            RotationDirection::CounterClockwise => (-1, [[0, 1], [-1, 0]]),
         };
 
         for i in 1..self.focused_tetromino.coords().len() {
@@ -240,7 +246,7 @@ impl Universe {
             t.y = (f_y + center_y as i32) as u32;
         }
 
-        let offset_date = match self.focused_tetromino.tetromino_type() {
+        let offset_data = match self.focused_tetromino.tetromino_type() {
             TetrominoType::J
             | TetrominoType::L
             | TetrominoType::S
@@ -249,6 +255,39 @@ impl Universe {
             TetrominoType::I => &I_OFFSET_DATA[..],
             TetrominoType::O => &O_OFFSET_DATA[..],
         };
+
+        let mut is_conflict = true;
+
+        // Try all of the 5 test cases
+        for i in 0..offset_data.len() {
+            let current_set =
+                offset_data[i][*self.focused_tetromino().rotation_state().rn() as usize];
+            let new_set = offset_data[i][self
+                .focused_tetromino()
+                .rotation_state()
+                .increment(next_index_diff) as usize];
+            let dxdy = [new_set[0] - current_set[0], new_set[1] - current_set[1]];
+
+            // Test collisions
+            if !Tetromino::will_collide_all(
+                &self.focused_tetromino,
+                &self.stagnant_tetrominos,
+                dxdy,
+            ) {
+                is_conflict = false;
+                // Move tetrimino
+
+                // Update indice
+
+                // Otherwise need to rotate back
+            }
+        }
+
+        // Just rotate back if there is conflict, will show up as nothing happened
+        // Good place to add sound as well
+        if is_conflict {
+            self.rotate_focused(RotationDirection::flip(rot_direction));
+        }
     }
 
     // self.focused_tetromino.rotation_state_mut().prev();
@@ -396,7 +435,7 @@ impl Universe {
         &self.stagnant_tetrominos
     }
 
-    pub fn stagnant_tetromino_mut(&mut self) -> &mut Vec<Tetromino> {
+    pub fn stagnant_tetrominos_mut(&mut self) -> &mut Vec<Tetromino> {
         &mut self.stagnant_tetrominos
     }
 
@@ -433,7 +472,7 @@ mod test {
             Coord::new(5, 22),
             TetrominoType::T,
         );
-        tetromino.move_down();
+        tetromino.move_by(Tetromino::get_dxdy(Direction::Down));
 
         let right_real_coords = vec![
             Coord { x: 4, y: 21 },
@@ -460,9 +499,9 @@ mod test {
             Coord::new(5, 22),
             TetrominoType::T,
         );
-        tetromino.move_down();
-        tetromino.move_down();
-        tetromino.move_down();
+        tetromino.move_by(Tetromino::get_dxdy(Direction::Left));
+        tetromino.move_by(Tetromino::get_dxdy(Direction::Left));
+        tetromino.move_by(Tetromino::get_dxdy(Direction::Left));
 
         let right_real_coords = vec![
             Coord { x: 4, y: 19 },
