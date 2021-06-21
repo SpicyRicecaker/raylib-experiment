@@ -135,25 +135,27 @@ impl InputInterface for Universe {
         for key in self.tetromino_controls.get_queue() {
             match key {
                 KeyboardKey::KEY_LEFT => {
-                    if self.focused_tetromino.within_boundary(Direction::Left)
+                    let dxdy = Tetromino::get_dxdy(Direction::Left);
+                    if self.focused_tetromino.within_boundary(dxdy)
                         && !Tetromino::will_collide_all(
                             &self.focused_tetromino,
                             &self.stagnant_tetrominos,
-                            Tetromino::get_dxdy(Direction::Left),
+                            dxdy,
                         )
                     {
-                        self.focused_tetromino.move_by(Tetromino::get_dxdy(Direction::Left))
+                        self.focused_tetromino.move_by(dxdy)
                     }
                 }
                 KeyboardKey::KEY_RIGHT => {
-                    if self.focused_tetromino.within_boundary(Direction::Right)
+                    let dxdy = Tetromino::get_dxdy(Direction::Right);
+                    if self.focused_tetromino.within_boundary(dxdy)
                         && !Tetromino::will_collide_all(
                             &self.focused_tetromino,
                             &self.stagnant_tetrominos,
-                            Tetromino::get_dxdy(Direction::Right),
+                            dxdy,
                         )
                     {
-                        self.focused_tetromino.move_by(Tetromino::get_dxdy(Direction::Right))
+                        self.focused_tetromino.move_by(dxdy)
                     }
                 }
                 KeyboardKey::KEY_DOWN => self.fall_focused(),
@@ -187,7 +189,9 @@ impl Universe {
 
     fn fall_focused(&mut self) {
         // Code that determines moving the pieces down
-        let within_boundary = self.focused_tetromino.within_boundary(Direction::Down);
+        let within_boundary = self
+            .focused_tetromino
+            .within_boundary(Tetromino::get_dxdy(Direction::Down));
         let mut collision = false;
 
         if within_boundary {
@@ -199,7 +203,8 @@ impl Universe {
         }
 
         if !collision && within_boundary {
-            self.focused_tetromino.move_by(Tetromino::get_dxdy(Direction::Down));
+            self.focused_tetromino
+                .move_by(Tetromino::get_dxdy(Direction::Down));
         } else {
             // Solidify the old current
             let temp = self.focused_tetromino.clone();
@@ -256,41 +261,42 @@ impl Universe {
             TetrominoType::O => &O_OFFSET_DATA[..],
         };
 
-        let mut is_conflict = true;
-
         // Try all of the 5 test cases
-        for i in 0..offset_data.len() {
+        for test in offset_data {
             let current_set =
-                offset_data[i][*self.focused_tetromino().rotation_state().rn() as usize];
-            let new_set = offset_data[i][self
+                test[*self.focused_tetromino().rotation_state().rn() as usize];
+            let new_set = test[self
                 .focused_tetromino()
                 .rotation_state()
-                .increment(next_index_diff) as usize];
-            let dxdy = [new_set[0] - current_set[0], new_set[1] - current_set[1]];
+                .get_increment(next_index_diff) as usize];
+            // Checkout <https://harddrop.com/wiki/SRS#How_Guideline_SRS_Really_Works> for more information on how the offset wallkicks are derived
+            // Current - Next
+            let dx_dy = [current_set[0] - new_set[0], current_set[1] - new_set[1]];
 
             // Test collisions
-            if !Tetromino::will_collide_all(
-                &self.focused_tetromino,
-                &self.stagnant_tetrominos,
-                dxdy,
-            ) {
-                is_conflict = false;
+            // First make sure it's in boundaries
+            if Tetromino::within_boundary(&self.focused_tetromino, dx_dy)
+                && !Tetromino::will_collide_all(
+                    &self.focused_tetromino,
+                    &self.stagnant_tetrominos,
+                    dx_dy,
+                )
+            {
                 // Move tetrimino
-
+                self.focused_tetromino_mut().move_by(dx_dy);
                 // Update indice
-
+                self.focused_tetromino_mut()
+                    .rotation_state_mut()
+                    .increment(next_index_diff);
                 // Otherwise need to rotate back
+                return;
             }
         }
 
         // Just rotate back if there is conflict, will show up as nothing happened
         // Good place to add sound as well
-        if is_conflict {
-            self.rotate_focused(RotationDirection::flip(rot_direction));
-        }
+        self.rotate_focused(RotationDirection::flip(rot_direction));
     }
-
-    // self.focused_tetromino.rotation_state_mut().prev();
 
     pub fn tick(&mut self, rl: &RaylibHandle) {
         *self.ticks_mut() += 1;

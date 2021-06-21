@@ -18,12 +18,21 @@ pub struct CircularNum {
 /// ```
 impl CircularNum {
     /// Takes in any dx
-    pub fn increment(&self, dx: i32) -> u32 {
+    pub fn get_increment(&self, dx: i32) -> u32 {
         // DEBUG
         // self.rn = ((self.rn as i32 + dx + self.max as i32) % self.max as i32) as u32;
         // &self.rn
         ((self.rn as i32 + dx + self.max as i32) % self.max as i32) as u32
     }
+
+    /// Actually increments
+    pub fn increment(&mut self, dx: i32) {
+        // DEBUG
+        // self.rn = ((self.rn as i32 + dx + self.max as i32) % self.max as i32) as u32;
+        // &self.rn
+        self.rn = ((self.rn as i32 + dx + self.max as i32) % self.max as i32) as u32;
+    }
+
 
     /// Get a reference to the circular num's rn.
     pub fn rn(&self) -> &u32 {
@@ -143,34 +152,13 @@ impl Tetromino {
         }
     }
 
-    pub fn within_boundary(&self, direction: Direction) -> bool {
-        match direction {
-            Direction::Up => false,
-            Direction::Down => {
-                for coord in self.coords.iter() {
-                    if coord.y == 0 {
-                        return false;
-                    }
-                }
-                true
-            }
-            Direction::Left => {
-                for coord in self.coords.iter() {
-                    if coord.x == 0 {
-                        return false;
-                    }
-                }
-                true
-            }
-            Direction::Right => {
-                for coord in self.coords.iter() {
-                    if coord.x + 1 >= 10 {
-                        return false;
-                    }
-                }
-                true
+    pub fn within_boundary(&self, dx_dy: [i32; 2]) -> bool {
+        for coord in self.coords.iter() {
+            if !(0..10).contains(&(coord.x as i32 + dx_dy[0])) || !(0..24).contains(&(coord.y as i32 + dx_dy[1])) {
+                return false;
             }
         }
+        true
     }
 
     pub fn get_dxdy(direction: Direction) -> [i32; 2] {
@@ -394,7 +382,7 @@ mod test {
             Coord::new(5, 10),
             TetrominoType::T,
         );
-        assert!(tetromino.within_boundary(Direction::Down));
+        assert!(tetromino.within_boundary(Tetromino::get_dxdy(Direction::Down)));
     }
 
     #[test]
@@ -409,6 +397,6 @@ mod test {
             Coord::new(5, 0),
             TetrominoType::T,
         );
-        assert!(tetromino.within_boundary(Direction::Down));
+        assert!(tetromino.within_boundary(Tetromino::get_dxdy(Direction::Down)));
     }
 }
