@@ -1,6 +1,8 @@
 # Tetris-rs
 Written in rust, with the [raylib-rs](https://github.com/deltaphc/raylib-rs) bindings for the [raylib](https://github.com/raysan5/raylib) library. 
 
+![Picture of Tetris Game Over Screen](https://raw.githubusercontent.com/SpicyRicecaker/tetris-rs/master/assets/game_over.jpg)
+
 ## Implementation
 Board: Used a vector of tetrominos that hold their own coords rather than a global array (for some reason), with width and height just for rendering  
 Tetrominos: Struct of vector of coords, with the center being the first coord in the vector  
