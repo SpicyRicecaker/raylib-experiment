@@ -1,7 +1,6 @@
 use raylib::prelude::*;
-use tetris_raylib_rs::{Config, Universe};
-// use raylib_moving_cube::Player;
-// use raylib_moving_cube::{Entity, Loop};
+use tetris_raylib_rs::config::Config;
+use tetris_raylib_rs::Universe;
 
 fn main() {
     let config = Config::default();
@@ -15,7 +14,7 @@ fn main() {
         .build();
 
     rl.set_target_fps(*config.fps());
-    
+
     // Debug, create new tetromino and add it to the universe
 
     while !rl.window_should_close() {

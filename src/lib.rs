@@ -1,10 +1,13 @@
 mod tetris_input;
-mod tetrominos;
+mod tetromino;
+mod tests;
+pub mod config;
 
 use std::collections::HashMap;
 
 use raylib::prelude::*;
-use tetrominos::*;
+use tetromino::*;
+use config::Config;
 
 use tetris_input::tetris::TetrominoControls;
 
@@ -40,80 +43,8 @@ impl RotationDirection {
         }
     }
 }
-
-pub struct Config {
-    fps: u32,
-    w: u32,
-    h: u32,
-    title: String,
-    actual_w: f64,
-    canvas_l: f64,
-    canvas_r: f64,
-}
-
-impl Config {
-    pub fn new(fps: u32, w: u32, h: u32, title: String) -> Self {
-        let actual_w = w as f64 * (9_f64 / 32_f64);
-        let canvas_l = (w as f64 - actual_w) / 2_f64;
-        let canvas_r = canvas_l + actual_w;
-
-        Config {
-            fps,
-            w,
-            h,
-            title,
-            actual_w,
-            canvas_l,
-            canvas_r,
-        }
-    }
-
-    /// Get a reference to the config's fps.
-    pub fn fps(&self) -> &u32 {
-        &self.fps
-    }
-
-    /// Get a reference to the config's title.
-    pub fn title(&self) -> &String {
-        &self.title
-    }
-
-    /// Get a reference to the config's h.
-    pub fn h(&self) -> &u32 {
-        &self.h
-    }
-
-    /// Get a reference to the config's w
-    pub fn w(&self) -> &u32 {
-        &self.w
-    }
-
-    /// Get a reference to the config's actual w.
-    pub fn actual_w(&self) -> &f64 {
-        &self.actual_w
-    }
-
-    /// Get a reference to the config's canvas l.
-    pub fn canvas_l(&self) -> &f64 {
-        &self.canvas_l
-    }
-
-    /// Get a reference to the config's canvas r.
-    pub fn canvas_r(&self) -> &f64 {
-        &self.canvas_r
-    }
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self::new(60, 1600, 900, String::from("Tetris"))
-    }
-}
-
-#[derive(Copy, Clone)]
-pub enum Cell {
-    Occupied = 1,
-    Unoccupied = 0,
+pub trait InputInterface {
+    fn receive_key(&mut self);
 }
 
 // The board for the tetris board
@@ -125,46 +56,50 @@ pub struct Universe {
     ticks: u32,
     tetromino_controls: TetrominoControls,
 }
+mod keyboard_input {
+    use super::Universe;
+    use super::InputInterface;
+    use raylib::prelude::*;
+    use super::Tetromino;
+    use super::Direction;
+    use super::RotationDirection;
 
-pub trait InputInterface {
-    fn receive_key(&mut self);
-}
-
-impl InputInterface for Universe {
-    fn receive_key(&mut self) {
-        for key in self.tetromino_controls.get_queue() {
-            match key {
-                KeyboardKey::KEY_LEFT => {
-                    let dxdy = Tetromino::get_dxdy(Direction::Left);
-                    if self.focused_tetromino.within_boundary(dxdy)
-                        && !Tetromino::will_collide_all(
-                            &self.focused_tetromino,
-                            &self.stagnant_tetrominos,
-                            dxdy,
-                        )
-                    {
-                        self.focused_tetromino.move_by(dxdy)
+    impl InputInterface for Universe {
+        fn receive_key(&mut self) {
+            for key in self.tetromino_controls.get_queue() {
+                match key {
+                    KeyboardKey::KEY_LEFT => {
+                        let dxdy = Tetromino::get_dxdy(Direction::Left);
+                        if self.focused_tetromino.within_boundary(dxdy)
+                            && !Tetromino::will_collide_all(
+                                &self.focused_tetromino,
+                                &self.stagnant_tetrominos,
+                                dxdy,
+                            )
+                        {
+                            self.focused_tetromino.move_by(dxdy)
+                        }
                     }
-                }
-                KeyboardKey::KEY_RIGHT => {
-                    let dxdy = Tetromino::get_dxdy(Direction::Right);
-                    if self.focused_tetromino.within_boundary(dxdy)
-                        && !Tetromino::will_collide_all(
-                            &self.focused_tetromino,
-                            &self.stagnant_tetrominos,
-                            dxdy,
-                        )
-                    {
-                        self.focused_tetromino.move_by(dxdy)
+                    KeyboardKey::KEY_RIGHT => {
+                        let dxdy = Tetromino::get_dxdy(Direction::Right);
+                        if self.focused_tetromino.within_boundary(dxdy)
+                            && !Tetromino::will_collide_all(
+                                &self.focused_tetromino,
+                                &self.stagnant_tetrominos,
+                                dxdy,
+                            )
+                        {
+                            self.focused_tetromino.move_by(dxdy)
+                        }
                     }
+                    KeyboardKey::KEY_DOWN => self.fall_focused(),
+                    KeyboardKey::KEY_Z => self.rotate_focused(RotationDirection::CounterClockwise),
+                    KeyboardKey::KEY_C => self.rotate_focused(RotationDirection::Clockwise),
+                    _ => {}
                 }
-                KeyboardKey::KEY_DOWN => self.fall_focused(),
-                KeyboardKey::KEY_Z => self.rotate_focused(RotationDirection::CounterClockwise),
-                KeyboardKey::KEY_C => self.rotate_focused(RotationDirection::Clockwise),
-                _ => {}
             }
+            self.tetromino_controls.clear_queue();
         }
-        self.tetromino_controls.clear_queue();
     }
 }
 
@@ -207,11 +142,18 @@ impl Universe {
                 .move_by(Tetromino::get_dxdy(Direction::Down));
         } else {
             // Solidify the old current
-            let temp = self.focused_tetromino.clone();
-            // let temp = self.focused_tetromino.clone();
-            self.stagnant_tetrominos.push(temp);
-            // We need to generate a new current and solidify the old current
+            self.stagnant_tetrominos
+                .push(self.focused_tetromino.clone());
+            // Generate a new current
             self.focused_tetromino = TetrominoType::generate_tetromino_rand();
+            // If it generates into a piece, game ova
+            if Tetromino::will_collide_all(
+                &self.focused_tetromino,
+                &self.stagnant_tetrominos,
+                [0, 0],
+            ) {
+                // Game over
+            }
         }
     }
 
@@ -263,8 +205,7 @@ impl Universe {
 
         // Try all of the 5 test cases
         for test in offset_data {
-            let current_set =
-                test[*self.focused_tetromino().rotation_state().rn() as usize];
+            let current_set = test[*self.focused_tetromino().rotation_state().rn() as usize];
             let new_set = test[self
                 .focused_tetromino()
                 .rotation_state()
@@ -459,76 +400,5 @@ impl Universe {
 impl Default for Universe {
     fn default() -> Self {
         Universe::new(10, 40, TetrominoType::generate_tetromino_rand(), vec![], 0)
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_move_down() {
-        let mut tetromino = Tetromino::spawn_tetrimno(
-            vec![
-                Coord::new(1, 0),
-                Coord::new(0, 0),
-                Coord::new(1, 1),
-                Coord::new(2, 0),
-            ],
-            Coord::new(5, 22),
-            TetrominoType::T,
-        );
-        tetromino.move_by(Tetromino::get_dxdy(Direction::Down));
-
-        let right_real_coords = vec![
-            Coord { x: 4, y: 21 },
-            Coord { x: 5, y: 22 },
-            Coord { x: 5, y: 21 },
-            Coord { x: 6, y: 21 },
-        ];
-
-        dbg!(&right_real_coords, tetromino.coords());
-
-        for idx in (0..4).into_iter() {
-            assert_eq!(right_real_coords.get(idx), tetromino.coords().get(idx))
-        }
-    }
-    #[test]
-    fn test_move_down_3() {
-        let mut tetromino = Tetromino::spawn_tetrimno(
-            vec![
-                Coord::new(0, 0),
-                Coord::new(1, 1),
-                Coord::new(1, 0),
-                Coord::new(2, 0),
-            ],
-            Coord::new(5, 22),
-            TetrominoType::T,
-        );
-        tetromino.move_by(Tetromino::get_dxdy(Direction::Left));
-        tetromino.move_by(Tetromino::get_dxdy(Direction::Left));
-        tetromino.move_by(Tetromino::get_dxdy(Direction::Left));
-
-        let right_real_coords = vec![
-            Coord { x: 4, y: 19 },
-            Coord { x: 5, y: 20 },
-            Coord { x: 5, y: 19 },
-            Coord { x: 6, y: 19 },
-        ];
-
-        dbg!(&right_real_coords, tetromino.coords());
-
-        for idx in (0..4).into_iter() {
-            assert_eq!(right_real_coords.get(idx), tetromino.coords().get(idx))
-        }
-    }
-
-    #[test]
-    fn test_increment_arr() {
-        let mut arr = [0_u32; 5];
-        let test = [0, 1, 1, 1, 1];
-        Universe::change_arr_from_idx(&mut arr, 1, 1);
-        assert_eq!(arr, test);
-        dbg!(arr);
     }
 }
