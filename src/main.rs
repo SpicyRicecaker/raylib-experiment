@@ -1,6 +1,5 @@
 use raylib::prelude::*;
-use tetris_raylib_rs::config::Config;
-use tetris_raylib_rs::Universe;
+use tetris_raylib_rs::{config::Config, universe::Universe};
 
 fn main() {
     let config = Config::default();

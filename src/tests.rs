@@ -1,11 +1,12 @@
 #[cfg(test)]
 mod test {
     mod movement {
-        use crate::Coord;
-        use crate::Direction;
-        use crate::Tetromino;
-        use crate::TetrominoType;
-        use crate::Universe;
+        use crate::{
+            tetromino::{
+                coord::Coord, direction::Direction, tetromino_type::TetrominoType, Tetromino,
+            },
+            universe::Universe,
+        };
 
         #[test]
         fn test_move_down() {
@@ -75,10 +76,9 @@ mod test {
     }
 
     mod spawn {
-        use crate::Tetromino;
-        use crate::Coord;
-        use crate::Direction;
-        use crate::TetrominoType;
+        use crate::tetromino::{
+            coord::Coord, direction::Direction, tetromino_type::TetrominoType, Tetromino,
+        };
 
         #[test]
         fn test_t_tetromino_spawn() {

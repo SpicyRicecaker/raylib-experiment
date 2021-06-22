@@ -1,7 +1,14 @@
 // Utils for holding a key
-use super::utils::*;
+mod utils;
+pub mod input;
+
+use utils::*;
 // The framework that keyboard input and keys are built on
 use raylib::prelude::*;
+
+pub trait InputInterface {
+    fn receive_key(&mut self);
+}
 // Our implementation of tetrominos
 pub struct TetrominoControls {
     // Not sure if fallrate really fits the agenda here
@@ -61,3 +68,4 @@ impl TetrominoControls {
         }
     }
 }
+
