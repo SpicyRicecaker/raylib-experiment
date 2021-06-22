@@ -9,6 +9,7 @@ use coord::*;
 use direction::*;
 use tetromino_type::*;
 
+use super::universe::color::ColorPalette;
 use super::Config;
 
 use raylib::prelude::*;
@@ -58,13 +59,20 @@ impl Tetromino {
         (canvas_y - (coord_y * dy)) as i32
     }
 
-    pub fn render(&self, d: &mut RaylibDrawHandle, config: &Config) {
-        let dy = config.h() / 20;
-        let dx = *config.actual_w() as u32 / 10;
+    pub fn render(
+        &self,
+        d: &mut RaylibDrawHandle,
+        config: &Config,
+        w: u32,
+        h: u32,
+        color_palette: &ColorPalette,
+    ) {
+        let dy = config.h() / h;
+        let dx = *config.actual_w() as u32 / w;
 
         // For every coord in the tetromino (4 coords in total)
         for (idx, coord) in self.coords.iter().enumerate() {
-            if coord.y >= 20 {
+            if coord.y >= h {
                 continue;
             }
             // Figure out what this means in terms of real coords
@@ -73,11 +81,7 @@ impl Tetromino {
                 (config.h() - (coord.y + 1) * dy) as i32,
                 dx as i32,
                 dy as i32,
-                if idx == 0 {
-                    Color::from_hex("ea6962").unwrap()
-                } else {
-                    Color::from_hex("d4be98").unwrap()
-                },
+                color_palette.color_for(self.tetromino_type),
             )
         }
     }

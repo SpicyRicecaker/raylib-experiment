@@ -10,7 +10,7 @@ impl InputInterface for Universe {
             match key {
                 KeyboardKey::KEY_LEFT => {
                     let dxdy = Tetromino::get_dxdy(Direction::Left);
-                    if self.focused_tetromino.within_boundary(dxdy)
+                    if self.focused_tetromino.within_boundary(dxdy, self.w, self.h)
                         && !Tetromino::will_collide_all(
                             &self.focused_tetromino,
                             &self.stagnant_tetrominos,
@@ -22,7 +22,7 @@ impl InputInterface for Universe {
                 }
                 KeyboardKey::KEY_RIGHT => {
                     let dxdy = Tetromino::get_dxdy(Direction::Right);
-                    if self.focused_tetromino.within_boundary(dxdy)
+                    if self.focused_tetromino.within_boundary(dxdy, self.w, self.h)
                         && !Tetromino::will_collide_all(
                             &self.focused_tetromino,
                             &self.stagnant_tetrominos,

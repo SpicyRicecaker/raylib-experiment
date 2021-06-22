@@ -116,7 +116,7 @@ mod test {
                 Coord::new(5, 10),
                 TetrominoType::T,
             );
-            assert!(tetromino.within_boundary(Tetromino::get_dxdy(Direction::Down)));
+            assert!(tetromino.within_boundary(Tetromino::get_dxdy(Direction::Down), 10, 20));
         }
 
         #[test]
@@ -131,7 +131,7 @@ mod test {
                 Coord::new(5, 0),
                 TetrominoType::T,
             );
-            assert!(tetromino.within_boundary(Tetromino::get_dxdy(Direction::Down)));
+            assert!(tetromino.within_boundary(Tetromino::get_dxdy(Direction::Down), 10, 20));
         }
     }
 }

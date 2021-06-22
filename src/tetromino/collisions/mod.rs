@@ -33,10 +33,10 @@ impl Tetromino {
         false
     }
 
-    pub fn within_boundary(&self, dx_dy: [i32; 2]) -> bool {
+    pub fn within_boundary(&self, dx_dy: [i32; 2], w: u32, h: u32) -> bool {
         for coord in self.coords.iter() {
-            if !(0..10).contains(&(coord.x as i32 + dx_dy[0]))
-                || !(0..24).contains(&(coord.y as i32 + dx_dy[1]))
+            if !(0..(w as i32)).contains(&(coord.x as i32 + dx_dy[0]))
+                || !(0..(h + 4) as i32).contains(&(coord.y as i32 + dx_dy[1]))
             {
                 return false;
             }

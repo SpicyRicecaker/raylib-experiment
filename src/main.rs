@@ -20,7 +20,6 @@ fn main() {
         universe.tick(&rl);
 
         let mut d = rl.begin_drawing(&thread);
-        d.clear_background(Color::from_hex("292828").unwrap());
 
         universe.render(&mut d, &config);
     }
