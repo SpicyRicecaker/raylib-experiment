@@ -1,6 +1,7 @@
 pub mod color;
 mod input;
 mod rotations;
+mod game;
 
 use std::collections::HashSet;
 
@@ -8,6 +9,7 @@ use rotations::rotation_direction::RotationDirection;
 use tetromino::tetromino_type::TetrominoType;
 
 use color::ColorPalette;
+use game::Game;
 
 use super::*;
 use direction::*;
@@ -15,61 +17,6 @@ use direction::*;
 const INITIAL_WIDTH: u32 = 10;
 const INITIAL_HEIGHT: u32 = 20;
 const INITIAL_SPEED: u32 = 12;
-
-// Single, double, triple, tetris, based off of gameboy
-const SCORE: [u32; 4] = [40, 100, 300, 1200];
-// Speeds for levels 3-20, based off of gameboy
-const SPEEDS: [u32; 21] = [
-    53, 49, 45, 41, 37, 33, 28, 22, 17, 11, 10, 9, 8, 7, 6, 6, 5, 5, 4, 4, 3,
-];
-const LVL_CAP: u32 = 20;
-
-pub struct Game {
-    // Internal game tick
-    ticks: u32,
-    // Game running
-    running: bool,
-    // Score
-    lines_cleared: u32,
-    // level
-    level: u32
-}
-impl Game {
-    /// Get a reference to the game's running.
-    pub fn running(&self) -> &bool {
-        &self.running
-    }
-
-    /// Get a reference to the universe's ticks.
-    pub fn ticks(&self) -> &u32 {
-        &self.ticks
-    }
-
-    /// Get a mutable reference to the universe's ticks.
-    pub fn ticks_mut(&mut self) -> &mut u32 {
-        &mut self.ticks
-    }
-}
-
-impl Game {
-    pub fn pause(&mut self) {
-        self.running = false;
-    }
-    pub fn resume(&mut self) {
-        self.running = true;
-    }
-}
-
-impl Default for Game {
-    fn default() -> Self {
-        Game {
-            ticks: 0,
-            running: true,
-            lines_cleared: 0,
-            level: 0
-        }
-    }
-}
 
 pub struct Universe {
     // Player controlled tetrimino
@@ -165,7 +112,7 @@ impl Universe {
 
         // Set level of the game
 
-        self.game.ticks += 1;
+        self.game.tick();
 
         self.tetromino_controls.tick(rl);
         self.receive_key();
@@ -173,13 +120,10 @@ impl Universe {
         // Literally just move current .y down
         // Falls at the rate of 6 per second
 
-        if self.game.ticks % 12 == 0 {
+        if self.game.should_fall() {
             self.fall_focused();
         }
 
-        if self.game.ticks >= 60 {
-            self.game.ticks = 0;
-        }
 
         let mut levels: HashMap<u32, u32> = HashMap::new();
 
@@ -241,8 +185,7 @@ impl Universe {
             }
         }
 
-        // Add lines cleared to game
-        self.game.lines_cleared += levels.len() as u32;
+        self.game.update(levels.len() as u32);
     }
 
     pub fn change_arr_from_idx(arr: &mut [u32], idx: u32, diff: u32) {
