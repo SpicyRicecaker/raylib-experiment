@@ -2,6 +2,8 @@ pub mod color;
 mod input;
 mod rotations;
 
+use std::collections::HashSet;
+
 use rotations::rotation_direction::RotationDirection;
 use tetromino::tetromino_type::TetrominoType;
 
@@ -12,17 +14,77 @@ use direction::*;
 
 const INITIAL_WIDTH: u32 = 10;
 const INITIAL_HEIGHT: u32 = 20;
-// const MAX_TICKS: u32 = 60;
+const INITIAL_SPEED: u32 = 12;
+
+// Single, double, triple, tetris, based off of gameboy
+const SCORE: [u32; 4] = [40, 100, 300, 1200];
+// Speeds for levels 3-20, based off of gameboy
+const SPEEDS: [u32; 21] = [
+    53, 49, 45, 41, 37, 33, 28, 22, 17, 11, 10, 9, 8, 7, 6, 6, 5, 5, 4, 4, 3,
+];
+const LVL_CAP: u32 = 20;
+
+pub struct Game {
+    // Internal game tick
+    ticks: u32,
+    // Game running
+    running: bool,
+    // Score
+    lines_cleared: u32,
+    // level
+    level: u32
+}
+impl Game {
+    /// Get a reference to the game's running.
+    pub fn running(&self) -> &bool {
+        &self.running
+    }
+
+    /// Get a reference to the universe's ticks.
+    pub fn ticks(&self) -> &u32 {
+        &self.ticks
+    }
+
+    /// Get a mutable reference to the universe's ticks.
+    pub fn ticks_mut(&mut self) -> &mut u32 {
+        &mut self.ticks
+    }
+}
+
+impl Game {
+    pub fn pause(&mut self) {
+        self.running = false;
+    }
+    pub fn resume(&mut self) {
+        self.running = true;
+    }
+}
+
+impl Default for Game {
+    fn default() -> Self {
+        Game {
+            ticks: 0,
+            running: true,
+            lines_cleared: 0,
+            level: 0
+        }
+    }
+}
 
 pub struct Universe {
+    // Player controlled tetrimino
     focused_tetromino: Tetromino,
+    // Tetriminos on board
     stagnant_tetrominos: Vec<Tetromino>,
+    // Controls for tetrimino
     tetromino_controls: TetrominoControls,
+    // Board
     w: u32,
     h: u32,
-    ticks: u32,
+    // Static color palette for game
     color_palette: ColorPalette,
-    alive: bool,
+    // Game mechanics
+    game: Game,
 }
 
 impl Universe {
@@ -31,20 +93,18 @@ impl Universe {
         h: u32,
         focused_tetromino: Tetromino,
         stagnant_tetrominos: Vec<Tetromino>,
-        ticks: u32,
+        tetromino_controls: TetrominoControls,
         color_palette: ColorPalette,
-        alive: bool,
+        game_mechanics: Game,
     ) -> Self {
-        let tetromino_controls = TetrominoControls::new();
         Universe {
             focused_tetromino,
             stagnant_tetrominos,
             tetromino_controls,
             w,
             h,
-            ticks,
             color_palette,
-            alive,
+            game: game_mechanics,
         }
     }
 
@@ -81,7 +141,7 @@ impl Universe {
                 [0, 0],
             ) {
                 // Game over
-                self.alive = false;
+                self.game.pause();
             }
         }
     }
@@ -93,17 +153,19 @@ impl Universe {
     fn game_over(&mut self, rl: &RaylibHandle) {
         if rl.is_key_down(KeyboardKey::KEY_R) {
             self.clear();
-            self.alive = true;
+            self.game.resume();
         }
     }
 
     pub fn tick(&mut self, rl: &RaylibHandle) {
-        if !self.alive {
+        if !self.game.running() {
             self.game_over(rl);
             return;
         }
 
-        *self.ticks_mut() += 1;
+        // Set level of the game
+
+        self.game.ticks += 1;
 
         self.tetromino_controls.tick(rl);
         self.receive_key();
@@ -111,12 +173,12 @@ impl Universe {
         // Literally just move current .y down
         // Falls at the rate of 6 per second
 
-        if self.ticks() % 12 == 0 {
+        if self.game.ticks % 12 == 0 {
             self.fall_focused();
         }
 
-        if *self.ticks() >= 60 {
-            *self.ticks_mut() = 0;
+        if self.game.ticks >= 60 {
+            self.game.ticks = 0;
         }
 
         let mut levels: HashMap<u32, u32> = HashMap::new();
@@ -125,53 +187,62 @@ impl Universe {
         // We should probably store the hashmap, this way we won't have to update it every tick
         for tetromino in self.stagnant_tetrominos.iter() {
             for coord in tetromino.coords() {
+                // Store the number of tetris parts in each y level
                 let e = levels.entry(coord.y).or_insert(0);
                 *e += 1;
             }
         }
 
-        let mut diff = vec![0; self.h as usize];
+        // filter out hash for levels that we need
+        let levels = levels
+            .iter()
+            .filter_map(|l| if *l.1 == self.w { Some(*l.0) } else { None })
+            .collect::<HashSet<u32>>();
 
-        let mut something_happened = false;
-        // Scan hash
-        for (level, width) in levels {
-            // If the row is full
-            if width == self.w {
-                something_happened = true;
-                // Query all tetrominos for level
-                let mut i = 0;
-                while i != self.stagnant_tetrominos.len() {
-                    let mut j = 0;
-                    while j != self.stagnant_tetrominos[i].coords().len() {
-                        if self.stagnant_tetrominos[i].coords()[j].y == level {
-                            self.stagnant_tetrominos[i].coords_mut().remove(j);
-                        } else {
-                            j += 1;
-                        }
-                    }
-                    // No memory leaks thank you
-                    if self.stagnant_tetrominos[i].coords().is_empty() {
-                        self.stagnant_tetrominos.remove(i);
-                    } else {
-                        i += 1;
-                    }
+        // Nothing to do if there aren't any full rows
+        if levels.is_empty() {
+            return;
+        }
+
+        // ...Otherwise, if there is a full row...
+
+        // Delete all stagnant tetriminos at these specific y levels
+        let mut i = 0;
+        while i != self.stagnant_tetrominos.len() {
+            let mut j = 0;
+            while j != self.stagnant_tetrominos[i].coords().len() {
+                if levels.contains(&self.stagnant_tetrominos[i].coords()[j].y) {
+                    self.stagnant_tetrominos[i].coords_mut().remove(j);
+                } else {
+                    j += 1;
                 }
-                // Everything above this width should then be incremented!
-                Universe::change_arr_from_idx(&mut diff, level, 1);
             }
+            // No memory leaks thank you
+            if self.stagnant_tetrominos[i].coords().is_empty() {
+                self.stagnant_tetrominos.remove(i);
+            } else {
+                i += 1;
+            }
+        }
+
+        // Then prepare to move the other tetriminos down (gravity)
+        let mut diff = vec![0; self.h as usize];
+        for level in levels.iter() {
+            Universe::change_arr_from_idx(&mut diff, *level, 1);
         }
 
         // Finally,if something happened try to move pieces down if they need to be moved
         // fk, we're iterating over stagnant tetrominos like 3 times. We honestly only need to really do it twice if we store the hashmap
         // If we implemented it with an array we would only need to iterate over the board once
-        if something_happened {
-            for i in 0..self.stagnant_tetrominos.len() {
-                for j in 0..self.stagnant_tetrominos[i].coords().len() {
-                    self.stagnant_tetrominos[i].coords_mut()[j].y -=
-                        diff[self.stagnant_tetrominos[i].coords()[j].y as usize];
-                }
+        for i in 0..self.stagnant_tetrominos.len() {
+            for j in 0..self.stagnant_tetrominos[i].coords().len() {
+                self.stagnant_tetrominos[i].coords_mut()[j].y -=
+                    diff[self.stagnant_tetrominos[i].coords()[j].y as usize];
             }
         }
+
+        // Add lines cleared to game
+        self.game.lines_cleared += levels.len() as u32;
     }
 
     pub fn change_arr_from_idx(arr: &mut [u32], idx: u32, diff: u32) {
@@ -186,7 +257,7 @@ impl Universe {
         // Only show 10x20 grid
 
         let dx = *config.actual_w() as u32 / self.w;
-        let dy = config.h() / self.h;
+        // let dy = config.h() / self.h;
 
         for x in [0, self.w].iter() {
             let current_x = x * dx + *config.canvas_l() as u32;
@@ -254,7 +325,7 @@ impl Universe {
         }
 
         // If game is in an 'over' state
-        if !self.alive {
+        if !self.game.running() {
             d.draw_text(
                 "GAME",
                 150,
@@ -300,16 +371,6 @@ impl Universe {
     pub fn stagnant_tetrominos_mut(&mut self) -> &mut Vec<Tetromino> {
         &mut self.stagnant_tetrominos
     }
-
-    /// Get a reference to the universe's ticks.
-    pub fn ticks(&self) -> &u32 {
-        &self.ticks
-    }
-
-    /// Get a mutable reference to the universe's ticks.
-    pub fn ticks_mut(&mut self) -> &mut u32 {
-        &mut self.ticks
-    }
 }
 
 impl Default for Universe {
@@ -319,9 +380,9 @@ impl Default for Universe {
             INITIAL_HEIGHT,
             TetrominoType::generate_tetromino_rand(),
             vec![],
-            0,
+            TetrominoControls::default(),
             ColorPalette::default(),
-            true,
+            Game::default(),
         )
     }
 }

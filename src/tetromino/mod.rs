@@ -71,7 +71,7 @@ impl Tetromino {
         let dx = *config.actual_w() as u32 / w;
 
         // For every coord in the tetromino (4 coords in total)
-        for (idx, coord) in self.coords.iter().enumerate() {
+        for (_idx, coord) in self.coords.iter().enumerate() {
             if coord.y >= h {
                 continue;
             }
