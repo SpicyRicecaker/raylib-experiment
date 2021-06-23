@@ -70,7 +70,7 @@ impl Universe {
 
             // Test collisions
             // First make sure it's in boundaries
-            if Tetromino::within_boundary(&self.focused_tetromino, dx_dy, self.w, self.h)
+            if Tetromino::within_boundary(&self.focused_tetromino, dx_dy, &self.dim)
                 && !Tetromino::will_collide_all(
                     &self.focused_tetromino,
                     &self.stagnant_tetrominos,

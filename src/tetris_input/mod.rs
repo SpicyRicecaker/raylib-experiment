@@ -1,5 +1,4 @@
 // Utils for holding a key
-pub mod input;
 mod utils;
 
 use utils::*;
@@ -60,6 +59,11 @@ impl Default for TetrominoControls {
             },
             ControlledKey {
                 key: KeyboardKey::KEY_C,
+                repeat: Repeat { delay: 8, rate: 8 },
+                ..Default::default()
+            },
+            ControlledKey {
+                key: KeyboardKey::KEY_SPACE,
                 repeat: Repeat { delay: 8, rate: 8 },
                 ..Default::default()
             },

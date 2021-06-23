@@ -10,7 +10,7 @@ impl InputInterface for Universe {
             match key {
                 KeyboardKey::KEY_LEFT => {
                     let dxdy = Tetromino::get_dxdy(Direction::Left);
-                    if self.focused_tetromino.within_boundary(dxdy, self.w, self.h)
+                    if self.focused_tetromino.within_boundary(dxdy, &self.dim)
                         && !Tetromino::will_collide_all(
                             &self.focused_tetromino,
                             &self.stagnant_tetrominos,
@@ -22,7 +22,7 @@ impl InputInterface for Universe {
                 }
                 KeyboardKey::KEY_RIGHT => {
                     let dxdy = Tetromino::get_dxdy(Direction::Right);
-                    if self.focused_tetromino.within_boundary(dxdy, self.w, self.h)
+                    if self.focused_tetromino.within_boundary(dxdy, &self.dim)
                         && !Tetromino::will_collide_all(
                             &self.focused_tetromino,
                             &self.stagnant_tetrominos,
@@ -38,6 +38,12 @@ impl InputInterface for Universe {
                 }
                 KeyboardKey::KEY_Z => self.rotate_focused(RotationDirection::CounterClockwise),
                 KeyboardKey::KEY_C => self.rotate_focused(RotationDirection::Clockwise),
+                KeyboardKey::KEY_SPACE => {
+                    let lines = self.focused_tetromino.coords()[0].y - self.ghost.coords()[0].y;
+                    self.focused_tetromino = self.ghost.clone();
+                    self.fall_focused();
+                    self.game.hard_move_down_score(lines);
+                }
                 _ => {}
             }
         }

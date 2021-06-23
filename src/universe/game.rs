@@ -83,6 +83,10 @@ impl Game {
         self.score += self.level + 1
     }
 
+    pub fn hard_move_down_score(&mut self, lines: u32) {
+        self.score += (self.level + 2) * lines;
+    }
+
     /// Increments tick by 1
     pub fn tick(&mut self) {
         if self.ticks >= FRAMES_PER_FALL[self.level as usize] {

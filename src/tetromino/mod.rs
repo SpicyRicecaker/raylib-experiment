@@ -9,7 +9,7 @@ use coord::*;
 use direction::*;
 use tetromino_type::*;
 
-use super::universe::color::ColorPalette;
+use super::universe::{color::ColorPalette, Dimensions};
 use super::Config;
 
 use raylib::prelude::*;
@@ -63,16 +63,15 @@ impl Tetromino {
         &self,
         d: &mut RaylibDrawHandle,
         config: &Config,
-        w: u32,
-        h: u32,
+        dim: &Dimensions,
         color_palette: &ColorPalette,
     ) {
-        let dy = config.h() / h;
-        let dx = *config.actual_w() as u32 / w;
+        let dy = config.h() / *dim.h();
+        let dx = *config.actual_w() as u32 / *dim.w();
 
         // For every coord in the tetromino (4 coords in total)
         for (_idx, coord) in self.coords.iter().enumerate() {
-            if coord.y >= h {
+            if coord.y >= *dim.h() {
                 continue;
             }
             // Figure out what this means in terms of real coords
@@ -85,6 +84,33 @@ impl Tetromino {
             )
         }
     }
+
+    pub fn render_alpha(
+        &self,
+        d: &mut RaylibDrawHandle,
+        config: &Config,
+        dim: &Dimensions,
+        color_palette: &ColorPalette,
+    ) {
+        let dy = config.h() / *dim.h();
+        let dx = *config.actual_w() as u32 / *dim.w();
+
+        // For every coord in the tetromino (4 coords in total)
+        for (_idx, coord) in self.coords.iter().enumerate() {
+            if coord.y >= *dim.h() {
+                continue;
+            }
+            // Figure out what this means in terms of real coords
+            d.draw_rectangle(
+                (*config.canvas_l() as u32 + coord.x * dx) as i32,
+                (config.h() - (coord.y + 1) * dy) as i32,
+                dx as i32,
+                dy as i32,
+                color_palette.color_for(self.tetromino_type).fade(0.4),
+            )
+        }
+    }
+
 
     pub fn get_dxdy(direction: Direction) -> [i32; 2] {
         match direction {

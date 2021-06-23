@@ -1,7 +1,7 @@
 pub mod color;
+mod game;
 mod input;
 mod rotations;
-mod game;
 
 use std::collections::HashSet;
 
@@ -18,49 +18,64 @@ const INITIAL_WIDTH: u32 = 10;
 const INITIAL_HEIGHT: u32 = 20;
 
 pub struct Universe {
+    // Board
+    dim: Dimensions,
     // Player controlled tetrimino
     focused_tetromino: Tetromino,
+    ghost: Tetromino,
     // Tetriminos on board
     stagnant_tetrominos: Vec<Tetromino>,
     // Controls for tetrimino
     tetromino_controls: TetrominoControls,
-    // Board
-    w: u32,
-    h: u32,
     // Static color palette for game
     color_palette: ColorPalette,
     // Game mechanics
     game: Game,
 }
 
+pub struct Dimensions {
+    w: u32,
+    h: u32,
+}
+
+impl Dimensions {
+    /// Get a reference to the dimensions's w.
+    pub fn w(&self) -> &u32 {
+        &self.w
+    }
+
+    /// Get a reference to the dimensions's h.
+    pub fn h(&self) -> &u32 {
+        &self.h
+    }
+}
+
 impl Universe {
     pub fn new(
-        w: u32,
-        h: u32,
+        dims: Dimensions,
         focused_tetromino: Tetromino,
         stagnant_tetrominos: Vec<Tetromino>,
         tetromino_controls: TetrominoControls,
         color_palette: ColorPalette,
-        game_mechanics: Game,
+        game: Game,
+        ghost: Tetromino,
     ) -> Self {
         Universe {
+            dim: dims,
             focused_tetromino,
             stagnant_tetrominos,
             tetromino_controls,
-            w,
-            h,
             color_palette,
-            game: game_mechanics,
+            game,
+            ghost,
         }
     }
 
     fn fall_focused(&mut self) {
         // Code that determines moving the pieces down
-        let within_boundary = self.focused_tetromino.within_boundary(
-            Tetromino::get_dxdy(Direction::Down),
-            self.w,
-            self.h,
-        );
+        let within_boundary = self
+            .focused_tetromino
+            .within_boundary(Tetromino::get_dxdy(Direction::Down), &self.dim);
         let mut collision = false;
 
         if within_boundary {
@@ -80,6 +95,7 @@ impl Universe {
                 .push(self.focused_tetromino.clone());
             // Generate a new current
             self.focused_tetromino = TetrominoType::generate_tetromino_rand();
+
             // If it generates into a piece, game ova
             if Tetromino::will_collide_all(
                 &self.focused_tetromino,
@@ -88,6 +104,34 @@ impl Universe {
             ) {
                 // Game over
                 self.game.pause();
+            }
+        }
+    }
+
+    /// Implmentation of hard drop preview
+    pub fn full_fall_focused(&mut self) {
+        self.ghost = self.focused_tetromino.clone();
+        loop {
+            // Code that determines moving the pieces down
+            let within_boundary = self
+                .ghost
+                .within_boundary(Tetromino::get_dxdy(Direction::Down), &self.dim);
+
+            let mut collision = false;
+
+            if within_boundary {
+                collision = Tetromino::will_collide_all(
+                    &self.ghost,
+                    &self.stagnant_tetrominos,
+                    Tetromino::get_dxdy(Direction::Down),
+                );
+            }
+
+            if !collision && within_boundary {
+                self.ghost
+                    .move_by(Tetromino::get_dxdy(Direction::Down));
+            } else {
+                return;
             }
         }
     }
@@ -115,6 +159,9 @@ impl Universe {
 
         self.game.tick();
 
+        // update preview/ghost
+        self.full_fall_focused();
+
         self.tetromino_controls.tick(rl);
         self.receive_key();
 
@@ -124,7 +171,6 @@ impl Universe {
         if self.game.should_fall() {
             self.fall_focused();
         }
-
 
         let mut levels: HashMap<u32, u32> = HashMap::new();
 
@@ -141,7 +187,7 @@ impl Universe {
         // filter out hash for levels that we need
         let levels = levels
             .iter()
-            .filter_map(|l| if *l.1 == self.w { Some(*l.0) } else { None })
+            .filter_map(|l| if *l.1 == self.dim.w { Some(*l.0) } else { None })
             .collect::<HashSet<u32>>();
 
         // Nothing to do if there aren't any full rows
@@ -171,7 +217,7 @@ impl Universe {
         }
 
         // Then prepare to move the other tetriminos down (gravity)
-        let mut diff = vec![0; self.h as usize];
+        let mut diff = vec![0; self.dim.h as usize];
         for level in levels.iter() {
             Universe::change_arr_from_idx(&mut diff, *level, 1);
         }
@@ -200,10 +246,10 @@ impl Universe {
         // Spawn tetrminoes at up to level 22
         // Only show 10x20 grid
 
-        let dx = *config.actual_w() as u32 / self.w;
+        let dx = *config.actual_w() as u32 / self.dim.w;
         // let dy = config.h() / self.h;
 
-        for x in [0, self.w].iter() {
+        for x in [0, self.dim.w].iter() {
             let current_x = x * dx + *config.canvas_l() as u32;
             d.draw_line_ex(
                 Vector2 {
@@ -261,12 +307,16 @@ impl Universe {
 
         // Render the focused tetrimino
         self.focused_tetromino()
-            .render(d, config, self.w, self.h, &self.color_palette);
+            .render(d, config, &self.dim, &self.color_palette);
 
         // And every other tetrimino
         for tetromino in self.stagnant_tetrominos().iter() {
-            tetromino.render(d, config, self.w, self.h, &self.color_palette);
+            tetromino.render(d, config, &self.dim, &self.color_palette);
         }
+
+        // Render the ghost
+        self.ghost()
+            .render_alpha(d, config, &self.dim, &self.color_palette);
 
         // If game is in an 'over' state
         if !self.game.running() {
@@ -295,21 +345,22 @@ impl Universe {
             // Display level
             d.draw_text(
                 &format!("LEVEL: {}", self.game.level()),
-                150, 
+                150,
                 150,
                 50,
-                self.color_palette.line()
+                self.color_palette.line(),
             );
             // Display score
             d.draw_text(
                 &format!("score: {}", self.game.score()),
-                150, 
+                150,
                 200,
                 30,
-                self.color_palette.line()
+                self.color_palette.line(),
             )
         }
     }
+
 }
 
 // Getters and setters
@@ -322,6 +373,11 @@ impl Universe {
     /// Get a mutable reference to the universe's current.
     pub fn focused_tetromino_mut(&mut self) -> &mut Tetromino {
         &mut self.focused_tetromino
+    }
+
+    /// Get a reference to the universe's ghost.
+    pub fn ghost(&self) -> &Tetromino {
+        &self.ghost
     }
 
     /// Get a reference to the universe's stagnant tetrominos.
@@ -337,13 +393,16 @@ impl Universe {
 impl Default for Universe {
     fn default() -> Self {
         Universe::new(
-            INITIAL_WIDTH,
-            INITIAL_HEIGHT,
+            Dimensions {
+                w: INITIAL_WIDTH,
+                h: INITIAL_HEIGHT,
+            },
             TetrominoType::generate_tetromino_rand(),
             vec![],
             TetrominoControls::default(),
             ColorPalette::default(),
             Game::default(),
+            TetrominoType::generate_tetromino_rand(),
         )
     }
 }
