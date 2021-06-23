@@ -6,7 +6,6 @@ const FRAMES_PER_FALL: [u32; 21] = [
 ];
 const LVL_CAP: u32 = 20;
 const LINES_PER_LEVEL: u32 = 10;
-const FPS: u32 = 60;
 
 pub struct Game {
     // Internal game tick
@@ -34,6 +33,16 @@ impl Game {
     /// Get a mutable reference to the universe's ticks.
     pub fn ticks_mut(&mut self) -> &mut u32 {
         &mut self.ticks
+    }
+
+    /// Get a reference to the game's level.
+    pub fn level(&self) -> &u32 {
+        &self.level
+    }
+
+    /// Get a reference to the game's score.
+    pub fn score(&self) -> &u32 {
+        &self.score
     }
 }
 
@@ -68,6 +77,10 @@ impl Game {
         // level goes up every 10 lines, capped at 20
         self.level =
             ((self.lines_cleared as f32 / LINES_PER_LEVEL as f32).floor() as u32).min(LVL_CAP);
+    }
+
+    pub fn fast_move_down_score(&mut self) {
+        self.score += self.level + 1
     }
 
     /// Increments tick by 1

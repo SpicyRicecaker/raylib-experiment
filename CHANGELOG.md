@@ -15,11 +15,12 @@
 - [x] _Rotation_
   - WE DON'T NEED TO HOLD CENTER
   - [x] Need to add the offset tables
-- [ ] Game Over / Restart Screen
-- [ ] colors
+- [x] Game Over / Restart Screen
+- [x] colors
+- [ ] add hard drop + preview
 - [ ] sound
   - [ ] music in the background
   - [ ] TETRIS for !
   - [ ] bouncing against the side
-- [ ] scoring
-  - [ ] game gets faster over time
+- [x] scoring
+  - [x] game gets faster over time

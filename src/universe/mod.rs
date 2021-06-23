@@ -16,7 +16,6 @@ use direction::*;
 
 const INITIAL_WIDTH: u32 = 10;
 const INITIAL_HEIGHT: u32 = 20;
-const INITIAL_SPEED: u32 = 12;
 
 pub struct Universe {
     // Player controlled tetrimino
@@ -99,8 +98,10 @@ impl Universe {
 
     fn game_over(&mut self, rl: &RaylibHandle) {
         if rl.is_key_down(KeyboardKey::KEY_R) {
+            // Clear board
             self.clear();
-            self.game.resume();
+            // Create new game instance
+            self.game = Game::default();
         }
     }
 
@@ -290,6 +291,23 @@ impl Universe {
                 20,
                 self.color_palette.line(),
             );
+        } else {
+            // Display level
+            d.draw_text(
+                &format!("LEVEL: {}", self.game.level()),
+                150, 
+                150,
+                50,
+                self.color_palette.line()
+            );
+            // Display score
+            d.draw_text(
+                &format!("score: {}", self.game.score()),
+                150, 
+                200,
+                30,
+                self.color_palette.line()
+            )
         }
     }
 }

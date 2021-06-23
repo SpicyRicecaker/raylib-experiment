@@ -32,7 +32,10 @@ impl InputInterface for Universe {
                         self.focused_tetromino.move_by(dxdy)
                     }
                 }
-                KeyboardKey::KEY_DOWN => self.fall_focused(),
+                KeyboardKey::KEY_DOWN => {
+                    self.fall_focused();
+                    self.game.fast_move_down_score()
+                }
                 KeyboardKey::KEY_Z => self.rotate_focused(RotationDirection::CounterClockwise),
                 KeyboardKey::KEY_C => self.rotate_focused(RotationDirection::Clockwise),
                 _ => {}
